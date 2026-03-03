@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Refined Live Lessons Schedule Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: "#F43F5E",
+                            hover: "#E11D48",
+                            light: "#FFF1F2"
+                        },
+                        surface: {
+                            light: "#F8FAFC",
+                            dark: "#0F172A"
+                        }
+                    },
+                    fontFamily: {
+                        sans: ["'Plus Jakarta Sans'", "sans-serif"],
+                    },
+                    borderRadius: {
+                        '3xl': "1.5rem",
+                        '4xl': "2rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-[#F1F5F9] font-sans text-slate-900 antialiased;
+            }
+        }
+        .soft-shadow {
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.05);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<div class="max-w-6xl mx-auto px-8 py-12">
+<div class="bg-primary rounded-3xl py-14 px-12 mb-10 text-center relative overflow-hidden shadow-xl shadow-rose-200">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<div class="absolute -left-10 top-0 w-64 h-64 rounded-full border-[40px] border-white"></div>
+<div class="absolute -right-10 bottom-0 w-64 h-64 rounded-full border-[40px] border-white"></div>
+</div>
+<h1 class="text-5xl md:text-6xl font-extrabold text-white tracking-tighter uppercase relative z-10 mb-3">
+                Live Lessons
+            </h1>
+<p class="text-rose-50 text-lg md:text-xl font-medium relative z-10 max-w-2xl mx-auto">
+                Interactive sessions hosted by expert instructors. Join the conversation and learn in real-time.
+            </p>
+</div>
+<div class="bg-white rounded-3xl soft-shadow overflow-hidden border border-slate-100">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-100 bg-slate-50/50">
+<th class="pl-12 pr-6 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Subject</th>
+<th class="px-6 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Topic</th>
+<th class="px-6 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Time</th>
+<th class="pl-6 pr-12 py-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<tr class="group hover:bg-slate-50/50 transition-colors duration-200">
+<td class="pl-12 pr-6 py-7">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+<span class="material-symbols-outlined text-2xl">functions</span>
+</div>
+<span class="font-bold text-slate-700">Mathematics</span>
+</div>
+</td>
+<td class="px-6 py-7">
+<span class="text-slate-600 font-medium block max-w-xs truncate lg:max-w-md">Advanced Calculus &amp; Integration Methods</span>
+</td>
+<td class="px-6 py-7">
+<div class="flex items-center gap-2 text-slate-500 font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">schedule</span>
+<span>10:00 AM - 11:30 AM</span>
+</div>
+</td>
+<td class="pl-6 pr-12 py-7 text-right">
+<button class="bg-primary hover:bg-primary-hover text-white px-7 py-3 rounded-xl font-bold text-sm transition-all shadow-md shadow-rose-100 hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap">
+                                    Enter Class
+                                </button>
+</td>
+</tr>
+<tr class="group hover:bg-slate-50/50 transition-colors duration-200">
+<td class="pl-12 pr-6 py-7">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+<span class="material-symbols-outlined text-2xl">biotech</span>
+</div>
+<span class="font-bold text-slate-700">Biology</span>
+</div>
+</td>
+<td class="px-6 py-7">
+<span class="text-slate-600 font-medium block max-w-xs truncate lg:max-w-md">Molecular Genetics and DNA structure</span>
+</td>
+<td class="px-6 py-7">
+<div class="flex items-center gap-2 text-slate-500 font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">schedule</span>
+<span>12:00 PM - 01:00 PM</span>
+</div>
+</td>
+<td class="pl-6 pr-12 py-7 text-right">
+<button class="bg-primary hover:bg-primary-hover text-white px-7 py-3 rounded-xl font-bold text-sm transition-all shadow-md shadow-rose-100 hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap">
+                                    Enter Class
+                                </button>
+</td>
+</tr>
+<tr class="group hover:bg-slate-50/50 transition-colors duration-200">
+<td class="pl-12 pr-6 py-7">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+<span class="material-symbols-outlined text-2xl">public</span>
+</div>
+<span class="font-bold text-slate-700">History</span>
+</div>
+</td>
+<td class="px-6 py-7">
+<span class="text-slate-600 font-medium block max-w-xs truncate lg:max-w-md">The Industrial Revolution's Global Impact</span>
+</td>
+<td class="px-6 py-7">
+<div class="flex items-center gap-2 text-slate-500 font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">schedule</span>
+<span>02:30 PM - 03:45 PM</span>
+</div>
+</td>
+<td class="pl-6 pr-12 py-7 text-right">
+<button class="bg-primary hover:bg-primary-hover text-white px-7 py-3 rounded-xl font-bold text-sm transition-all shadow-md shadow-rose-100 hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap">
+                                    Enter Class
+                                </button>
+</td>
+</tr>
+<tr class="group hover:bg-slate-50/50 transition-colors duration-200">
+<td class="pl-12 pr-6 py-7">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+<span class="material-symbols-outlined text-2xl">science</span>
+</div>
+<span class="font-bold text-slate-700">Chemistry</span>
+</div>
+</td>
+<td class="px-6 py-7">
+<span class="text-slate-600 font-medium block max-w-xs truncate lg:max-w-md">Organic Compounds &amp; Atomic Bonding</span>
+</td>
+<td class="px-6 py-7">
+<div class="flex items-center gap-2 text-slate-500 font-medium whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">schedule</span>
+<span>04:15 PM - 05:30 PM</span>
+</div>
+</td>
+<td class="pl-6 pr-12 py-7 text-right">
+<button class="bg-primary hover:bg-primary-hover text-white px-7 py-3 rounded-xl font-bold text-sm transition-all shadow-md shadow-rose-100 hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap">
+                                    Enter Class
+                                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-12 py-8 flex justify-between items-center border-t border-slate-100 bg-slate-50/30">
+<div class="flex items-center gap-3">
+<div class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+</div>
+<span class="text-sm font-bold text-slate-500 uppercase tracking-widest">4 Lessons Live Today</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-white hover:text-slate-600 hover:border-slate-300 transition-all">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-white hover:text-slate-600 hover:border-slate-300 transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>
