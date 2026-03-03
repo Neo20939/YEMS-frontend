@@ -6,7 +6,7 @@ interface DashboardHeroProps {
 }
 
 export default function DashboardHero({
-  studentName = "FAWEHINMI",
+  studentName = "User",
   academicSession = "2024/2025",
 }: DashboardHeroProps) {
   // Determine greeting based on time

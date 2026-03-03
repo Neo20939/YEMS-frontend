@@ -24,11 +24,11 @@ const navItems = [
   { name: "Live Classes", href: "#", icon: Radio },
   { name: "Notes", href: "#", icon: BookOpen },
   { name: "Assignments", href: "#", icon: CheckSquare },
-  { name: "Reports", href: "#", icon: BarChart3 },
+  
 ]
 
 export default function Sidebar({
-  studentName = "Fawehinmi",
+  studentName = "User",
   studentId = "4022",
 }: SidebarProps) {
   const pathname = usePathname()

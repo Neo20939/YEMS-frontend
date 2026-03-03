@@ -8,7 +8,7 @@ interface DashboardHeaderProps {
 }
 
 export default function DashboardHeader({
-  studentName = "FAWEHINMI",
+  studentName = "User",
   studentId = "4022",
 }: DashboardHeaderProps) {
   const initial = studentName.charAt(0).toUpperCase()
