@@ -127,6 +127,9 @@ bun dev
 | `/assignments` | Assignments |
 | `/notes` | Notes dashboard |
 | `/exams` | Exam listing |
+| `/exams/objective` | Objective exam page |
+| `/exams/theory` | Theory exam page |
+| `/exams/midterm` | Midterm exam page |
 
 ## 🎨 Design System
 
