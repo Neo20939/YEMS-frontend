@@ -50,17 +50,17 @@ const ExamHeader = React.forwardRef<HTMLElement, ExamHeaderProps>(
       <header
         ref={ref}
         className={cn(
-          "sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between shadow-sm",
+          "sticky top-0 z-50 bg-cream/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-beige/60 dark:border-slate-800/60 px-6 py-3 flex items-center justify-between shadow-sm",
           className
         )}
       >
         {/* Left Section - Exam Info */}
         <div className="flex items-center gap-4">
-          <div className="bg-primary/10 p-2 rounded-lg text-primary">
+          <div className="bg-secondary p-2 rounded-lg text-primary">
             <BadgeCheck className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight text-slate-900 dark:text-slate-100">
+            <h1 className="text-lg font-bold leading-tight text-slate-800 dark:text-slate-200">
               {title}
             </h1>
             {section && (
@@ -90,34 +90,34 @@ const ExamHeader = React.forwardRef<HTMLElement, ExamHeaderProps>(
                 className={cn(
                   "flex items-center gap-3 px-4 py-2 rounded-xl",
                   timerVariant === "warning"
-                    ? "bg-orange-50 text-orange-600 border border-orange-100"
-                    : "bg-slate-100 dark:bg-slate-800"
+                    ? "bg-secondary/50 text-primary border border-primary/20"
+                    : "bg-beige/50 dark:bg-slate-800/70"
                 )}
               >
                 <Clock
                   className={cn(
                     "h-5 w-5",
-                    timerVariant === "warning" ? "text-orange-600" : "text-primary"
+                    timerVariant === "warning" ? "text-primary" : "text-primary"
                   )}
                 />
                 <span
                   className={cn(
                     "text-lg font-mono font-bold tracking-wider",
                     timerVariant === "warning"
-                      ? "text-orange-700 dark:text-orange-200"
+                      ? "text-primary dark:text-primary-light"
                       : "text-slate-700 dark:text-slate-200"
                   )}
                 >
                   {remainingTime}
                 </span>
               </div>
-              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
+              <div className="h-8 w-px bg-beige/60 dark:bg-slate-700/60" />
             </>
           )}
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 {studentName}
               </p>
               {studentId && (
@@ -128,8 +128,8 @@ const ExamHeader = React.forwardRef<HTMLElement, ExamHeaderProps>(
             </div>
             <div
               className={cn(
-                "size-10 rounded-full bg-slate-200 bg-cover bg-center border-2 border-white dark:border-slate-700 shadow-sm",
-                !profileImage && "flex items-center justify-center bg-primary/10"
+                "size-10 rounded-full bg-beige bg-cover bg-center border-2 border-white/80 dark:border-slate-700/80 shadow-sm",
+                !profileImage && "flex items-center justify-center bg-secondary"
               )}
               style={
                 profileImage ? { backgroundImage: `url('${profileImage}')` } : undefined

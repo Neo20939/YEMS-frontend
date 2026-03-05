@@ -45,7 +45,10 @@ export default function DeadlinesPanel({
 }: DeadlinesPanelProps) {
   return (
     <div className="lg:col-span-1">
-      <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden h-full flex flex-col">
+      <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden h-full flex flex-col transform perspective-1000 rotate-y-2 shadow-2xl shadow-slate-900/50 hover:rotate-y-1 transition-transform duration-300 ease-out" style={{
+        transform: 'perspective(1000px) rotateY(-4deg) translateX(-10px)',
+        boxShadow: '15px 15px 30px rgba(0, 0, 0, 0.3), 5px 5px 15px rgba(0, 0, 0, 0.2)'
+      }}>
         <div className="absolute top-0 right-0 w-40 h-40 bg-rose-600/20 rounded-full -mr-10 -mt-10 blur-3xl"></div>
         
         <h3 className="text-lg font-bold mb-6 flex items-center gap-3 relative z-10">

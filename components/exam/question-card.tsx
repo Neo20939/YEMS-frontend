@@ -69,10 +69,10 @@ const QuestionCard = React.forwardRef<HTMLDivElement, QuestionCardProps>(
         </div>
 
         {/* Question Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-8 shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl p-8 shadow-sm border border-slate-200/60 dark:border-slate-800/60">
           {/* Card Header */}
           <div className="flex items-start justify-between mb-6">
-            <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase">
+            <span className="bg-primary/10 text-primary/90 text-xs font-bold px-3 py-1 rounded-full uppercase">
               {questionType}
             </span>
             {points !== undefined && (
@@ -83,7 +83,7 @@ const QuestionCard = React.forwardRef<HTMLDivElement, QuestionCardProps>(
           </div>
 
           {/* Question Text */}
-          <h2 className="text-xl font-medium leading-relaxed text-slate-800 dark:text-slate-100 mb-10">
+          <h2 className="text-xl font-medium leading-relaxed text-slate-700 dark:text-slate-200 mb-10">
             {questionText}
           </h2>
 
@@ -97,8 +97,8 @@ const QuestionCard = React.forwardRef<HTMLDivElement, QuestionCardProps>(
                   className={cn(
                     "group flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
                     isSelected
-                      ? "border-primary bg-primary/5"
-                      : "border-slate-100 dark:border-slate-800 hover:border-primary/30 hover:bg-primary/5"
+                      ? "border-primary/70 bg-primary/5"
+                      : "border-slate-100/60 dark:border-slate-800/60 hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   <input
@@ -112,8 +112,8 @@ const QuestionCard = React.forwardRef<HTMLDivElement, QuestionCardProps>(
                     className={cn(
                       "ml-4 font-medium",
                       isSelected
-                        ? "text-primary font-bold"
-                        : "text-slate-700 dark:text-slate-300"
+                        ? "text-primary/90 font-bold"
+                        : "text-slate-600 dark:text-slate-300"
                     )}
                   >
                     <span className="font-bold mr-2">{option.label}.</span>

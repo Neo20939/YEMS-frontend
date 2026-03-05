@@ -71,7 +71,7 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
     return (
       <div ref={ref} className={cn("w-full max-w-7xl mx-auto px-6 py-8", className)}>
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-rose-600 to-rose-500 rounded-2xl p-8 mb-8 text-white shadow-xl">
+        <div className="bg-primary rounded-2xl p-8 mb-8 text-white shadow-soft">
           <div className="text-center">
             <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide mb-4">
               {sessionLabel}
@@ -86,7 +86,7 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
         {/* Filters */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-6 h-6 rounded bg-rose-100 text-rose-600">
+            <div className="flex items-center justify-center w-6 h-6 rounded bg-secondary text-primary">
               <FileText className="h-4 w-4" />
             </div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -99,7 +99,7 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-colors border",
                 filter === "all"
-                  ? "bg-rose-50 text-rose-600 border-rose-200"
+                  ? "bg-secondary text-primary border-primary-light"
                   : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
               )}
             >
@@ -110,7 +110,7 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-colors border",
                 filter === "upcoming"
-                  ? "bg-rose-50 text-rose-600 border-rose-200"
+                  ? "bg-secondary text-primary border-primary-light"
                   : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
               )}
             >
@@ -148,7 +148,7 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
           <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
             <AlertCircle className="h-4 w-4" />
             Having trouble? Contact our{" "}
-            <button className="text-rose-600 hover:text-rose-700 font-medium underline underline-offset-2">
+            <button className="text-primary hover:text-primary-light font-medium underline underline-offset-2">
               technical support team
             </button>
           </p>
@@ -177,7 +177,7 @@ const ExamCardItem = ({ exam, onClick }: ExamCardItemProps) => {
       className={cn(
         "group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 transition-all duration-300",
         !isLocked &&
-          "hover:shadow-xl hover:border-rose-200 dark:hover:border-rose-800 cursor-pointer hover:-translate-y-1"
+          "hover:shadow-xl hover:border-primary-light dark:hover:border-primary-light cursor-pointer hover:-translate-y-1"
       )}
       onClick={() => !isLocked && onClick(exam)}
       role={!isLocked ? "button" : undefined}
@@ -248,7 +248,7 @@ const ExamCardItem = ({ exam, onClick }: ExamCardItemProps) => {
         </Button>
       ) : (
         <Button
-          className="w-full bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-500/30"
+          className="w-full bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/30"
           size="lg"
           onClick={(e) => {
             e.stopPropagation()
@@ -284,17 +284,17 @@ function getIconComponent(iconType: ExamCard["iconType"]) {
 function getIconBgColor(iconType: ExamCard["iconType"]) {
   switch (iconType) {
     case "math":
-      return "bg-rose-50 text-rose-600"
+      return "bg-secondary text-primary"
     case "science":
-      return "bg-blue-50 text-blue-600"
+      return "bg-sage-light text-sage-dark"
     case "english":
-      return "bg-emerald-50 text-emerald-600"
+      return "bg-beige-light text-beige-dark"
     case "philosophy":
-      return "bg-purple-50 text-purple-600"
+      return "bg-secondary-light text-primary"
     case "history":
-      return "bg-orange-50 text-orange-600"
+      return "bg-beige text-beige-dark"
     case "computer":
-      return "bg-indigo-50 text-indigo-600"
+      return "bg-sage text-sage-dark"
     default:
       return "bg-slate-50 text-slate-600"
   }
@@ -303,11 +303,11 @@ function getIconBgColor(iconType: ExamCard["iconType"]) {
 function getStatusConfig(status: ExamCard["status"]) {
   switch (status) {
     case "not-started":
-      return { bgColor: "bg-amber-50", textColor: "text-amber-700", label: "NOT STARTED" }
+      return { bgColor: "bg-secondary text-primary", textColor: "", label: "NOT STARTED" }
     case "upcoming":
-      return { bgColor: "bg-blue-50", textColor: "text-blue-700", label: "UPCOMING" }
+      return { bgColor: "bg-sage-light text-sage-dark", textColor: "", label: "UPCOMING" }
     case "new":
-      return { bgColor: "bg-emerald-50", textColor: "text-emerald-700", label: "NEW" }
+      return { bgColor: "bg-beige-light text-beige-dark", textColor: "", label: "NEW" }
     case "locked":
       return { bgColor: "bg-slate-100", textColor: "text-slate-500", label: "LOCKED" }
   }

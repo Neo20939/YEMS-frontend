@@ -81,7 +81,7 @@ const ExamSelection = React.forwardRef<HTMLDivElement, ExamSelectionProps>(
     return (
       <div ref={ref} className={cn("w-full max-w-5xl mx-auto px-6 py-8", className)}>
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-rose-600 to-rose-500 rounded-2xl p-8 mb-10 text-white shadow-xl">
+        <div className="bg-primary rounded-2xl p-8 mb-10 text-white shadow-soft">
           <div className="text-center">
             <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide mb-4">
               {sessionLabel}
@@ -112,7 +112,7 @@ const ExamSelection = React.forwardRef<HTMLDivElement, ExamSelectionProps>(
               <React.Fragment key={index}>
                 {part}
                 {index < arr.length - 1 && (
-                  <button className="text-rose-600 hover:text-rose-700 font-medium underline underline-offset-2">
+                  <button className="text-primary hover:text-primary-light font-medium underline underline-offset-2">
                     technical support team
                   </button>
                 )}
@@ -144,7 +144,7 @@ const ExamTypeCardItem = ({ examType, onClick }: ExamTypeCardItemProps) => {
       className={cn(
         "group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 transition-all duration-300",
         examType.available
-          ? "hover:shadow-xl hover:border-rose-200 dark:hover:border-rose-800 cursor-pointer hover:-translate-y-1"
+          ? "hover:shadow-xl hover:border-primary-light dark:hover:border-primary-light cursor-pointer hover:-translate-y-1"
           : "opacity-60 cursor-not-allowed"
       )}
       onClick={() => examType.available && onClick(examType)}
@@ -163,7 +163,7 @@ const ExamTypeCardItem = ({ examType, onClick }: ExamTypeCardItemProps) => {
     >
       {/* Icon */}
       <div className="flex justify-center mb-6">
-        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 group-hover:scale-110 transition-transform duration-300">
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary text-primary group-hover:scale-110 transition-transform duration-300">
           <IconComponent className="h-8 w-8" />
         </div>
       </div>

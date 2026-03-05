@@ -4,20 +4,20 @@
 
 :root {
   --font-raleway: "Raleway", sans-serif;
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --background: 45 25% 96%;
+  --foreground: 340 60% 30%;
+  --border: 30 20% 85%;
+  --input: 30 20% 85%;
+  --ring: 340 55% 45%;
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
+  --background: 340 25% 15%;
+  --foreground: 45 30% 96%;
+  --border: 340 15% 25%;
+  --input: 340 15% 25%;
+  --ring: 340 40% 55%;
 }
 
 * {

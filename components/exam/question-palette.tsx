@@ -34,10 +34,10 @@ export interface QuestionPaletteProps {
 }
 
 const statusClasses: Record<QuestionStatus, string> = {
-  answered: "bg-emerald-500 text-white hover:bg-emerald-600",
-  "not-answered": "bg-orange-500 text-white hover:bg-orange-600",
-  unvisited: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600",
-  current: "border-2 border-primary text-primary font-bold bg-white dark:bg-slate-900 hover:bg-primary/5",
+  answered: "bg-emerald-500/90 text-white hover:bg-emerald-600/90",
+  "not-answered": "bg-orange-500/90 text-white hover:bg-orange-600/90",
+  unvisited: "bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400 hover:bg-slate-300/70 dark:hover:bg-slate-600/70",
+  current: "border-2 border-primary/80 text-primary/90 font-bold bg-white/90 dark:bg-slate-900/90 hover:bg-primary/5",
 }
 
 const QuestionPalette = React.forwardRef<HTMLDivElement, QuestionPaletteProps>(
@@ -58,16 +58,16 @@ const QuestionPalette = React.forwardRef<HTMLDivElement, QuestionPaletteProps>(
       <div
         ref={ref}
         className={cn(
-          "w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col",
+          "w-80 border-l border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col",
           className
         )}
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">
+        <div className="p-6 border-b border-slate-100/60 dark:border-slate-800/60">
+          <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-1">
             Question Palette
           </h3>
-          <p className="text-xs text-slate-500">Quickly jump to any question</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Quickly jump to any question</p>
         </div>
 
         {/* Question Grid */}
@@ -90,25 +90,25 @@ const QuestionPalette = React.forwardRef<HTMLDivElement, QuestionPaletteProps>(
 
         {/* Legend & Summary */}
         {showLegend && summary && (
-          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800">
+          <div className="p-6 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-200/60 dark:border-slate-800/60">
             <h4 className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-4">
               Summary
             </h4>
             <div className="grid grid-cols-2 gap-y-3 gap-x-4">
               <div className="flex items-center gap-2">
-                <div className="size-3 rounded-sm bg-emerald-500" />
+                <div className="size-3 rounded-sm bg-emerald-500/90" />
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                   Answered ({summary.answered})
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="size-3 rounded-sm bg-orange-500" />
+                <div className="size-3 rounded-sm bg-orange-500/90" />
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                   Not Answered ({summary.notAnswered})
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="size-3 rounded-sm bg-slate-300 dark:bg-slate-600" />
+                <div className="size-3 rounded-sm bg-slate-300/70 dark:bg-slate-600/70" />
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
                   Unvisited ({summary.unvisited})
                 </span>
@@ -118,7 +118,7 @@ const QuestionPalette = React.forwardRef<HTMLDivElement, QuestionPaletteProps>(
             {onSubmitExam && (
               <button
                 onClick={onSubmitExam}
-                className="w-full mt-6 py-3 rounded-lg bg-slate-900 dark:bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity"
+                className="w-full mt-6 py-3 rounded-lg bg-slate-800/90 dark:bg-primary/90 text-white font-bold text-sm hover:opacity-90 transition-opacity"
               >
                 {submitButtonText}
               </button>

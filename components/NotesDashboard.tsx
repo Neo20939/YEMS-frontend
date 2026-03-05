@@ -127,7 +127,7 @@ export function NotesDashboard({
     <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-6 py-12">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary to-rose-500 rounded-[2.5rem] p-8 md:p-12 mb-10 shadow-xl shadow-rose-200/50 dark:shadow-none relative overflow-hidden">
+        <div className="bg-primary rounded-[2.5rem] p-8 md:p-12 mb-10 shadow-xl shadow-rose-200/50 dark:shadow-none relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="max-w-2xl">
               <div className="flex items-center gap-3 mb-4">

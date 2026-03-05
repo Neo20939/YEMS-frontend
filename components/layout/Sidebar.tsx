@@ -20,11 +20,10 @@ interface SidebarProps {
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Exams", href: "/objective-exam", icon: AlertCircle },
-  { name: "Live Classes", href: "#", icon: Radio },
-  { name: "Notes", href: "#", icon: BookOpen },
-  { name: "Assignments", href: "#", icon: CheckSquare },
-  
+  { name: "Exams", href: "/exams", icon: AlertCircle },
+  { name: "Live Classes", href: "/live-lessons", icon: Radio },
+  { name: "Notes", href: "/notes", icon: BookOpen },
+  { name: "Assignments", href: "/assignments", icon: CheckSquare },
 ]
 
 export default function Sidebar({

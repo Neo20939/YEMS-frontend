@@ -84,7 +84,7 @@ export default function ObjectiveExamsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream">
       <Sidebar />
       <div className="ml-20 transition-all duration-300">
         <DashboardHeader />
