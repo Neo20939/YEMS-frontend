@@ -1,6 +1,6 @@
-import Sidebar from "@/components/layout/Sidebar"
-import DashboardHeader from "@/components/layout/DashboardHeader"
-import LiveLessons from "@/components/layout/LiveLessons"
+import Sidebar from "@/components/layout/Sidebar/StudentSidebar"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
+import LiveLessons from "@/components/shared/LiveLessons"
 
 export default function LiveLessonsPage() {
   return (

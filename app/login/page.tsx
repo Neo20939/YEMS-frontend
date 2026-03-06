@@ -49,11 +49,11 @@ export default function LoginPage() {
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuBizVqjWr2wJvrbjeK2GDkl8g3jcjW1mIJxPr7oYR1VdPoi8WPcB-rLXaKBph71zEuGXE9r6-KDiBpoSGlLe72S7qvkSROrjXmMvRK_A2GxJvgBFHWm2HoirfvOsdK4PtAxPI0tSyfejiCaLfwEwE-9q02reKiYtBO7_3ANWp3a4JNFlgnHmu4ZTAqqBh5bGN8y9vk4xhd9_rO-Xq7swH2DPCO0JTMgeuHKqoHyo4LMomC0gCdTaMtOFXzDlTEmR37kXUYXClW53qE"
         />
         <div className="relative z-20 flex flex-col justify-center items-center w-full p-12 text-center text-white">
-          <h1 className="font-display text-5xl font-bold mb-4 tracking-tight">St. Mary&apos;s Academy</h1>
-          <p className="text-xl mb-8 font-display italic text-accent">Est. 1895</p>
+          <h1 className="font-display text-5xl font-bold mb-4 tracking-tight">Yeshua High School</h1>
+          <p className="text-xl mb-8 font-display italic text-accent">Christ-Centered Education Since 2005</p>
           <p className="text-2xl font-display mb-12 max-w-lg leading-relaxed">
-            Nurturing Minds, Building Futures.<br />
-            Dedicated to academic excellence and character development.
+            Jesus Our <span className="text-accent font-bold">Perfect</span> Example<br />
+            We are one of the leading Christian co-educational secondary schools in Nigeria, focused on making education fun and practical for our students.
           </p>
           <div className="w-32 h-40 border-2 border-accent/50 rounded-b-full flex flex-col items-center justify-center p-4 relative bg-primary/40 backdrop-blur-sm">
             <div className="grid grid-cols-2 gap-2 w-full h-full pb-6">

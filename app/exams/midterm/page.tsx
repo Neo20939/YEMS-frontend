@@ -3,8 +3,8 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Calculator, Atom, BookOpen, FlaskConical, Globe, PenTool } from "lucide-react"
-import Sidebar from "@/components/layout/Sidebar"
-import DashboardHeader from "@/components/layout/DashboardHeader"
+import { StudentSidebar } from "@/components/layout/Sidebar"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import { MidtermListing } from "@/components/exam/midterm-listing"
 import type { MidtermCard } from "@/components/exam/midterm-listing"
 
@@ -82,7 +82,7 @@ export default function MidTermExamsPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Sidebar />
+      <StudentSidebar />
       <div className="ml-20 transition-all duration-300">
         <DashboardHeader />
         <main className="py-8">

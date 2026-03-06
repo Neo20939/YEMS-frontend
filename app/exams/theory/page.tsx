@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import Sidebar from "@/components/layout/Sidebar"
-import DashboardHeader from "@/components/layout/DashboardHeader"
+import { StudentSidebar } from "@/components/layout/Sidebar"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import { ExamListing } from "@/components/exam"
 import type { ExamCard } from "@/components/exam"
 
@@ -85,7 +85,7 @@ export default function TheoryExamsPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Sidebar />
+      <StudentSidebar />
       <div className="ml-20 transition-all duration-300">
         <DashboardHeader />
         <main className="py-8">

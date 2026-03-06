@@ -1,10 +1,10 @@
-import Sidebar from "@/components/layout/Sidebar"
-import DashboardHeader from "@/components/layout/DashboardHeader"
-import DashboardHero from "@/components/layout/DashboardHero"
-import DashboardCards from "@/components/layout/DashboardCards"
-import SchoolNews from "@/components/layout/SchoolNews"
-import DeadlinesPanel from "@/components/layout/DeadlinesPanel"
-import DashboardFooter from "@/components/layout/DashboardFooter"
+import Sidebar from "@/components/layout/Sidebar/StudentSidebar"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
+import DashboardHero from "@/components/dashboard/DashboardHero"
+import DashboardCards from "@/components/dashboard/DashboardCards"
+import SchoolNews from "@/components/shared/SchoolNews"
+import DeadlinesPanel from "@/components/shared/DeadlinesPanel"
+import DashboardFooter from "@/components/dashboard/DashboardFooter"
 
 export default function DashboardPage() {
   return (

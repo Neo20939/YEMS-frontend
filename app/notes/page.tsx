@@ -1,5 +1,5 @@
-import Sidebar from "@/components/layout/Sidebar"
-import DashboardHeader from "@/components/layout/DashboardHeader"
+import { StudentSidebar as Sidebar } from "@/components/layout/Sidebar"
+import DashboardHeader from "@/components/dashboard/DashboardHeader"
 import { NotesDashboard } from "@/components/NotesDashboard"
 
 export default function NotesPage() {

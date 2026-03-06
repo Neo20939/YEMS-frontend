@@ -1,9 +1,9 @@
-import TeacherSidebar from "@/components/layout/TeacherSidebar"
-import TeacherHeader from "@/components/layout/TeacherHeader"
-import TeacherHero from "@/components/layout/TeacherHero"
-import TeacherActionCards from "@/components/layout/TeacherActionCards"
-import SchoolNews from "@/components/layout/SchoolNews"
-import TeacherMeetingsPanel from "@/components/layout/TeacherMeetingsPanel"
+import TeacherSidebar from "@/components/teachers/TeacherSidebar"
+import TeacherHeader from "@/components/teachers/TeacherHeader"
+import TeacherHero from "@/components/teachers/TeacherHero"
+import TeacherActionCards from "@/components/teachers/TeacherActionCards"
+import SchoolNews from "@/components/shared/SchoolNews"
+import TeacherMeetingsPanel from "@/components/teachers/TeacherMeetingsPanel"
 
 export default function TeacherDashboardPage() {
   return (
