@@ -2,6 +2,8 @@
 
 import { Bell, LogOut, User, Settings } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
+import { useUser } from "@/contexts/UserContext"
+import { useRouter } from "next/navigation"
 
 interface DashboardHeaderProps {
   studentName?: string
@@ -9,9 +11,13 @@ interface DashboardHeaderProps {
 }
 
 export default function DashboardHeader({
-  studentName = "User",
+  studentName: propName,
   studentId = "4022",
 }: DashboardHeaderProps) {
+  const { user, logout } = useUser()
+  const router = useRouter()
+  const studentName = user?.name || propName || "User"
+  const studentIdDisplay = user?.id || studentId
   const initial = studentName.charAt(0).toUpperCase()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -26,20 +32,15 @@ export default function DashboardHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const handleLogout = () => {
-    console.log("Logging out...")
+  const handleLogout = async () => {
+    await logout()
     setIsDropdownOpen(false)
+    router.push("/login")
   }
 
   return (
     <nav className="bg-white border-b border-gray-100 py-6 px-6">
       <div className="max-w-7xl mx-auto relative flex items-center justify-center">
-        <div className="absolute left-0 hidden md:flex items-center gap-4">
-          <span className="text-xs font-semibold tracking-widest text-gray-400 uppercase">
-            Student Dashboard
-          </span>
-        </div>
-
         <div className="flex flex-col items-center gap-1">
           <span className="font-bold text-lg tracking-tight text-slate-900">
             Yeshua Educational Platform
@@ -53,7 +54,7 @@ export default function DashboardHeader({
           <div className="hidden md:flex flex-col items-end mr-2">
             <p className="text-sm font-semibold text-slate-800">{studentName}</p>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider">
-              ID: {studentId}
+              ID: {studentIdDisplay}
             </p>
           </div>
           <div className="relative" ref={dropdownRef}>
@@ -68,7 +69,7 @@ export default function DashboardHeader({
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="text-sm font-semibold text-slate-800">{studentName}</p>
-                  <p className="text-xs text-slate-500">ID: {studentId}</p>
+                  <p className="text-xs text-slate-500">ID: {studentIdDisplay}</p>
                 </div>
                 <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
                   <User className="w-4 h-4" />
