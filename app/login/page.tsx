@@ -31,11 +31,18 @@ export default function LoginPage() {
       console.log("=== LOGIN SUCCESS ===")
       console.log("Full response:", JSON.stringify(response, null, 2))
       console.log("User object:", response.user)
-      console.log("User role raw:", response.user.role)
-      console.log("User role type:", typeof response.user.role)
+      
+      // Handle different possible role field names
+      const userRole = (response.user as any).role || 
+                       (response.user as any).userType || 
+                       (response.user as any).role_name || 
+                       (response.user as any).user_role ||
+                       'student'
+      
+      console.log("Detected user role:", userRole)
 
       // Redirect based on user role
-      const redirectPath = getRedirectPathByRole(response.user.role)
+      const redirectPath = getRedirectPathByRole(userRole)
       console.log("Calculated redirect path:", redirectPath)
       console.log("Navigating to:", redirectPath)
       

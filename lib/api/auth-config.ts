@@ -137,16 +137,28 @@ export function clearAuthToken(): void {
 export function getRedirectPathByRole(role: string): string {
   const normalizedRole = role.toLowerCase().trim()
   
-  if (normalizedRole === 'admin' || normalizedRole === 'administrator') {
+  // Admin roles
+  if (normalizedRole === 'admin' || 
+      normalizedRole === 'administrator' || 
+      normalizedRole === 'platform_admin') {
     return '/admin'
   }
   
-  if (normalizedRole === 'teacher' || normalizedRole === 'professor' || normalizedRole === 'instructor') {
+  // Teacher roles
+  if (normalizedRole === 'teacher' || 
+      normalizedRole === 'professor' || 
+      normalizedRole === 'instructor') {
     return '/teachers/dashboard'
   }
   
+  // Student role
   if (normalizedRole === 'student') {
     return '/dashboard'
+  }
+  
+  // Technician role - treat as teacher for now
+  if (normalizedRole === 'technician') {
+    return '/teachers/dashboard'
   }
   
   // Default to student dashboard for unknown roles

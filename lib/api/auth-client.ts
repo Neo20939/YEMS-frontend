@@ -38,10 +38,13 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
         password: credentials.password,
       }
     )
-    
+
+    console.log("=== AUTH-CLIENT LOGIN RESPONSE ===")
+    console.log("Raw data from API:", JSON.stringify(data, null, 2))
+
     // Save tokens and user data to storage
     saveAuthToken(data.accessToken, data.refreshToken, data.user)
-    
+
     return data
   } catch (error) {
     if (axios.isAxiosError(error)) {
