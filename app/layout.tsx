@@ -12,6 +12,12 @@ export const metadata = {
   description: "Student dashboard and exam interface built with Next.js",
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 0.9,
+  maximumScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
