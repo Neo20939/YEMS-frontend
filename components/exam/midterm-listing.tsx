@@ -37,6 +37,8 @@ export interface MidtermListingProps {
   onStartExam?: (midterm: MidtermCard) => void
   /** Additional className */
   className?: string
+  /** Loading state */
+  isLoading?: boolean
 }
 
 const MidtermListing = React.forwardRef<HTMLDivElement, MidtermListingProps>(
@@ -48,6 +50,7 @@ const MidtermListing = React.forwardRef<HTMLDivElement, MidtermListingProps>(
       midterms,
       onStartExam,
       className,
+      isLoading = false,
     },
     ref
   ) => {
@@ -64,6 +67,51 @@ const MidtermListing = React.forwardRef<HTMLDivElement, MidtermListingProps>(
       if (midterm.status !== "locked" && onStartExam) {
         onStartExam(midterm)
       }
+    }
+
+    if (isLoading) {
+      return (
+        <div ref={ref} className={cn("w-full max-w-7xl mx-auto px-6 py-8", className)}>
+          {/* Header Banner Skeleton */}
+          <div className="bg-gradient-to-r from-primary to-primary-light rounded-3xl p-10 mb-10 animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="text-left">
+                <div className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide mb-4 w-48 h-6"></div>
+                <div className="h-10 bg-white/20 rounded w-64 mb-3"></div>
+                <div className="h-4 bg-white/20 rounded w-96"></div>
+              </div>
+              <div className="hidden lg:flex items-center justify-center w-32 h-32 rounded-full bg-white/10 backdrop-blur-sm">
+                <div className="w-16 h-16 bg-white/20 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Loading Cards */}
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 animate-pulse">
+                <div className="flex items-center gap-6">
+                  <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-slate-200 dark:bg-slate-700"></div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div>
+                        <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-48 mb-1"></div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-80"></div>
+                      </div>
+                      <div className="w-24 h-8 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                    </div>
+                    <div className="flex items-center gap-6 mt-4">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 w-32 h-12 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
     }
 
     return (
