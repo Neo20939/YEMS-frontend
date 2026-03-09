@@ -39,6 +39,8 @@ export interface ExamListingProps {
   onStartExam?: (exam: ExamCard) => void
   /** Additional className */
   className?: string
+  /** Loading state */
+  isLoading?: boolean
 }
 
 const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
@@ -50,6 +52,7 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
       exams,
       onStartExam,
       className,
+      isLoading = false,
     },
     ref
   ) => {
@@ -66,6 +69,40 @@ const ExamListing = React.forwardRef<HTMLDivElement, ExamListingProps>(
       if (exam.status !== "locked" && onStartExam) {
         onStartExam(exam)
       }
+    }
+
+    if (isLoading) {
+      return (
+        <div ref={ref} className={cn("w-full max-w-7xl mx-auto px-6 py-8", className)}>
+          {/* Header Banner Skeleton */}
+          <div className="bg-primary rounded-2xl p-8 mb-8 animate-pulse">
+            <div className="text-center">
+              <div className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide mb-4 w-48 h-6"></div>
+              <div className="h-10 bg-white/20 rounded w-64 mx-auto mb-3"></div>
+              <div className="h-4 bg-white/20 rounded w-96 mx-auto"></div>
+            </div>
+          </div>
+
+          {/* Loading Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 animate-pulse">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700"></div>
+                  <div className="w-20 h-6 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                </div>
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full mb-4"></div>
+                <div className="space-y-2 mb-4">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                </div>
+                <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
     }
 
     return (
