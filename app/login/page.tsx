@@ -28,17 +28,24 @@ export default function LoginPage() {
         password: formData.password,
       })
 
-      console.log("Login response:", response)
-      console.log("User role:", response.user.role)
+      console.log("=== LOGIN SUCCESS ===")
+      console.log("Full response:", JSON.stringify(response, null, 2))
+      console.log("User object:", response.user)
+      console.log("User role raw:", response.user.role)
+      console.log("User role type:", typeof response.user.role)
 
       // Redirect based on user role
       const redirectPath = getRedirectPathByRole(response.user.role)
-      console.log("Redirect path:", redirectPath)
-      router.push(redirectPath)
+      console.log("Calculated redirect path:", redirectPath)
+      console.log("Navigating to:", redirectPath)
+      
+      // Force a hard navigation to ensure redirect works
+      window.location.href = redirectPath
     } catch (err) {
       const apiError = err as ApiError
       setError(apiError.message || "Login failed. Please check your credentials.")
       console.error("Login error:", err)
+      console.error("Full error:", JSON.stringify(err, null, 2))
     } finally {
       setIsLoading(false)
     }
