@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { TeacherSidebar } from "@/components/teachers/TeacherSidebar"
+import TeacherSidebar from "@/components/teachers/TeacherSidebar"
 import TeacherHeader from "@/components/teachers/TeacherHeader"
 import { useUser } from "@/contexts/UserContext"
 import { getExams, createQuestion, type Exam } from "@/lib/api/exam-client"
