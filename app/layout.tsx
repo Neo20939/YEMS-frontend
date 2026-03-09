@@ -1,5 +1,6 @@
 import { Raleway } from "next/font/google"
 import "./globals.css"
+import { UserProvider } from "@/contexts/UserContext"
 
 const raleway = Raleway({
   subsets: ["latin"],
@@ -18,7 +19,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={raleway.variable}>
-      <body className="font-sans">{children}</body>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        />
+      </head>
+      <body className="font-sans">
+        <UserProvider>{children}</UserProvider>
+      </body>
     </html>
   )
 }

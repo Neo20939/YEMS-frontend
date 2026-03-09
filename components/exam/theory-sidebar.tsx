@@ -73,6 +73,13 @@ const TheorySidebar = React.forwardRef<HTMLElement, TheorySidebarProps>(
           className
         )}
       >
+        {/* Logo Header */}
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-center">
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img src="/yhs.png" alt="Yeshua High School" className="w-full h-full object-contain" />
+          </div>
+        </div>
+
         {/* Sections List */}
         <div className="flex flex-col gap-2 p-4 overflow-y-auto flex-1">
           <h3 className="px-2 text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">

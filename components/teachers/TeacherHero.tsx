@@ -1,14 +1,19 @@
 "use client"
 
+import { useUser } from "@/contexts/UserContext"
+
 interface TeacherHeroProps {
   teacherName?: string
   academicSession?: string
 }
 
 export default function TeacherHero({
-  teacherName = "Teacher",
+  teacherName: propName,
   academicSession = "2024/2025",
 }: TeacherHeroProps) {
+  const { user } = useUser()
+  const teacherName = user?.name || propName || "Teacher"
+
   const getGreeting = () => {
     const hour = new Date().getHours()
     if (hour < 12) return "Good Morning"

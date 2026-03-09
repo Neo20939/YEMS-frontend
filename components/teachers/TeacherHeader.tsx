@@ -2,16 +2,29 @@
 
 import { Bell, LogOut, User, Settings } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
+import { useUser } from "@/contexts/UserContext"
+import { useRouter } from "next/navigation"
 
 interface TeacherHeaderProps {
   teacherName?: string
   teacherId?: string
 }
 
+function getGreeting(name: string): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return `Good morning, ${name}`
+  if (hour < 18) return `Good afternoon, ${name}`
+  return `Good evening, ${name}`
+}
+
 export default function TeacherHeader({
-  teacherName = "Teacher",
-  teacherId = "T001",
+  teacherName: propName,
+  teacherId: propId,
 }: TeacherHeaderProps) {
+  const { user, logout } = useUser()
+  const router = useRouter()
+  const teacherName = user?.name || propName || "Teacher"
+  const teacherId = user?.id || propId || "T001"
   const initial = teacherName.charAt(0).toUpperCase()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -26,17 +39,20 @@ export default function TeacherHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const handleLogout = () => {
-    console.log("Logging out...")
+  const handleLogout = async () => {
+    await logout()
     setIsDropdownOpen(false)
+    router.push("/login")
   }
+
+  const greeting = getGreeting(teacherName.split(" ")[0])
 
   return (
     <nav className="bg-white border-b border-gray-100 py-6 px-6">
       <div className="max-w-7xl mx-auto relative flex items-center justify-center">
         <div className="absolute left-0 hidden md:flex items-center gap-4">
           <span className="text-xs font-semibold tracking-widest text-gray-400 uppercase">
-            Teacher Dashboard
+            {greeting}
           </span>
         </div>
 

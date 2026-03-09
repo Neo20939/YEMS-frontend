@@ -9,6 +9,7 @@ import {
   Settings,
   ClipboardCheck,
 } from "lucide-react"
+import { useUser } from "@/contexts/UserContext"
 
 interface TeacherSidebarProps {
   teacherName?: string
@@ -22,17 +23,20 @@ const navItems = [
 ]
 
 export default function TeacherSidebar({
-  teacherName = "Teacher",
-  teacherId = "T001",
+  teacherName: propName,
+  teacherId: propId,
 }: TeacherSidebarProps) {
+  const { user } = useUser()
+  const teacherName = user?.name || propName || "Teacher"
+  const teacherId = user?.id || propId || "T001"
   const pathname = usePathname()
 
   return (
     <aside className="group fixed left-0 top-0 h-full bg-primary z-50 flex flex-col transition-all duration-300 w-20 hover:w-64 shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="h-24 flex items-center justify-center border-b border-white/10 w-full shrink-0">
-        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
-          <GraduationCap className="w-6 h-6" />
+        <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center shrink-0 p-2">
+          <img src="/yhs.png" alt="Yeshua High School" className="w-full h-full object-contain" />
         </div>
       </div>
 

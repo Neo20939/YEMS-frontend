@@ -3,13 +3,16 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { User, Lock, Eye, EyeOff, ArrowLeft, BookOpen, FlaskConical, Trophy, Palette } from "lucide-react"
+import { login, getRedirectPathByRole } from "@/lib/api/auth-client"
+import type { ApiError } from "@/lib/api/auth-config"
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
     remember: false,
   })
@@ -17,14 +20,21 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
-    // Simulate API call - replace with actual authentication logic
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      // On successful login, redirect to dashboard
-      router.push("/dashboard")
-    } catch (error) {
-      console.error("Login error:", error)
+      const response = await login({
+        email: formData.email,
+        password: formData.password,
+      })
+      
+      // Redirect based on user role
+      const redirectPath = getRedirectPathByRole(response.user.role)
+      router.push(redirectPath)
+    } catch (err) {
+      const apiError = err as ApiError
+      setError(apiError.message || "Login failed. Please check your credentials.")
+      console.error("Login error:", err)
     } finally {
       setIsLoading(false)
     }
@@ -86,22 +96,31 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-sm">error</span>
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="sr-only" htmlFor="username">
-                User ID or Email
+              <label className="sr-only" htmlFor="email">
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="text-gray-400 w-5 h-5" />
                 </div>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  placeholder="ID or Email"
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Email Address"
                   required
-                  value={formData.username}
+                  value={formData.email}
                   onChange={handleChange}
                   className="appearance-none rounded relative block w-full px-3 py-4 pl-10 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
                 />
