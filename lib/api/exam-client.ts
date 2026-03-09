@@ -355,10 +355,102 @@ export function convertExamToCard(exam: Exam) {
     duration: exam.duration,
     questions: exam.totalQuestions,
     questionType: exam.type === 'objective' ? 'MCQs' : 'Theory',
-    status: exam.status === 'not-started' ? 'not-started' : 
-            exam.status === 'in-progress' ? 'new' : 
+    status: exam.status === 'not-started' ? 'not-started' :
+            exam.status === 'in-progress' ? 'new' :
             exam.status === 'completed' ? 'locked' : 'upcoming',
     iconType: exam.iconType || 'science',
     route: exam.type === 'objective' ? `/objective-exam?id=${exam.id}` : `/theory-exam?id=${exam.id}`,
+  }
+}
+
+/**
+ * Create a new question for an exam
+ */
+export async function createQuestion(
+  examId: string,
+  questionData: {
+    sectionId: string
+    type: 'multiple-choice' | 'single-choice' | 'essay' | 'short-answer'
+    text: string
+    order: number
+    marks: number
+    options?: { id: string; label: string; text: string }[]
+    metadata?: {
+      difficulty?: 'easy' | 'medium' | 'hard'
+      topic?: string
+      tags?: string[]
+    }
+  }
+): Promise<ExamQuestion> {
+  try {
+    const { data } = await apiClient.post<ExamQuestion>(
+      `/exams/${examId}/questions`,
+      questionData
+    )
+    return data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw {
+        message: error.response?.data?.message || 'Failed to create question',
+        status: error.response?.status,
+      } as ApiError
+    }
+    throw error
+  }
+}
+
+/**
+ * Update an existing question
+ */
+export async function updateQuestion(
+  examId: string,
+  questionId: string,
+  questionData: {
+    type?: 'multiple-choice' | 'single-choice' | 'essay' | 'short-answer'
+    text?: string
+    order?: number
+    marks?: number
+    options?: { id: string; label: string; text: string }[]
+    metadata?: {
+      difficulty?: 'easy' | 'medium' | 'hard'
+      topic?: string
+      tags?: string[]
+    }
+  }
+): Promise<ExamQuestion> {
+  try {
+    const { data } = await apiClient.put<ExamQuestion>(
+      `/exams/${examId}/questions/${questionId}`,
+      questionData
+    )
+    return data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw {
+        message: error.response?.data?.message || 'Failed to update question',
+        status: error.response?.status,
+      } as ApiError
+    }
+    throw error
+  }
+}
+
+/**
+ * Delete a question
+ */
+export async function deleteQuestion(
+  examId: string,
+  questionId: string
+): Promise<void> {
+  try {
+    await apiClient.delete(`/exams/${examId}/questions/${questionId}`)
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw {
+        message: error.response?.data?.message || 'Failed to delete question',
+        status: error.response?.status,
+      } as ApiError
+    }
+    throw error
   }
 }
