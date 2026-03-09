@@ -69,20 +69,20 @@ export default function UserModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-stone-900 rounded-2xl w-full max-w-lg shadow-2xl border border-stone-200 dark:border-stone-800">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl w-full max-w-md shadow-2xl border border-stone-200 dark:border-stone-800">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-stone-200 dark:border-stone-800">
-          <div className="flex items-center gap-3">
-            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-stone-800">
+          <div className="flex items-center gap-2">
+            <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-xl">
                 {user ? "edit" : "person_add"}
               </span>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {user ? "Edit User" : "Add New User"}
               </h3>
-              <p className="text-sm text-slate-500">
+              <p className="text-xs text-slate-500">
                 {user ? "Update user information" : "Create a new user account"}
               </p>
             </div>
@@ -96,10 +96,10 @@ export default function UserModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Full Name
             </label>
             <div className="relative">
@@ -111,7 +111,7 @@ export default function UserModal({
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
                 placeholder="Enter full name"
               />
             </div>
@@ -119,7 +119,7 @@ export default function UserModal({
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Email Address
             </label>
             <div className="relative">
@@ -131,7 +131,7 @@ export default function UserModal({
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
                 placeholder="Enter email address"
               />
             </div>
@@ -139,14 +139,14 @@ export default function UserModal({
 
           {/* Role Selection */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Role
             </label>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {roles.map((role) => (
                 <label
                   key={role.value}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                     formData.role === role.value
                       ? "border-primary bg-primary/5"
                       : "border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800"
@@ -161,13 +161,13 @@ export default function UserModal({
                     className="size-4 text-primary focus:ring-primary"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                       {role.label}
                     </p>
-                    <p className="text-xs text-slate-500">{role.description}</p>
+                    <p className="text-[10px] text-slate-500">{role.description}</p>
                   </div>
                   {formData.role === role.value && (
-                    <span className="material-symbols-outlined text-primary text-lg">
+                    <span className="material-symbols-outlined text-primary text-base">
                       check_circle
                     </span>
                   )}
@@ -178,16 +178,16 @@ export default function UserModal({
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Status
             </label>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               {(["active", "inactive", "pending"] as const).map((status) => (
                 <button
                   key={status}
                   type="button"
                   onClick={() => setFormData({ ...formData, status })}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
                     formData.status === status
                       ? status === "active"
                         ? "bg-emerald-100 text-emerald-700 ring-2 ring-emerald-500"
@@ -205,7 +205,7 @@ export default function UserModal({
 
           {/* Department */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Department
             </label>
             <div className="relative">
@@ -217,24 +217,24 @@ export default function UserModal({
                 required
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
                 placeholder="Enter department"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              className="flex-1 px-4 py-2 rounded-xl border border-stone-200 dark:border-stone-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors"
+              className="flex-1 px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors text-sm"
             >
               {user ? "Save Changes" : "Add User"}
             </button>
