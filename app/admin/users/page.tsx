@@ -1,128 +1,90 @@
 "use client"
 
 import AdminLayout from "@/components/admin/AdminLayout"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import UserModal from "@/components/admin/UserModal"
 import UserTable from "@/components/admin/UserTable"
-
-export interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-  status: "active" | "inactive" | "pending"
-  department: string
-  createdAt: string
-  avatar?: string
-}
-
-const initialUsers: User[] = [
-  {
-    id: "1",
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@yesua.edu",
-    role: "Professor",
-    status: "active",
-    department: "Computer Science",
-    createdAt: "2024-01-15",
-    avatar: "https://i.pravatar.cc/150?u=1",
-  },
-  {
-    id: "2",
-    name: "Prof. Michael Chen",
-    email: "michael.chen@yesua.edu",
-    role: "Department Head",
-    status: "active",
-    department: "Engineering",
-    createdAt: "2024-02-20",
-    avatar: "https://i.pravatar.cc/150?u=2",
-  },
-  {
-    id: "3",
-    name: "Emily Rodriguez",
-    email: "emily.rodriguez@yesua.edu",
-    role: "Student",
-    status: "active",
-    department: "Business Administration",
-    createdAt: "2024-03-10",
-    avatar: "https://i.pravatar.cc/150?u=3",
-  },
-  {
-    id: "4",
-    name: "James Wilson",
-    email: "james.wilson@yesua.edu",
-    role: "Admin",
-    status: "active",
-    department: "IT Services",
-    createdAt: "2024-01-05",
-    avatar: "https://i.pravatar.cc/150?u=4",
-  },
-  {
-    id: "5",
-    name: "Lisa Thompson",
-    email: "lisa.thompson@yesua.edu",
-    role: "Professor",
-    status: "inactive",
-    department: "Mathematics",
-    createdAt: "2024-02-28",
-    avatar: "https://i.pravatar.cc/150?u=5",
-  },
-  {
-    id: "6",
-    name: "David Park",
-    email: "david.park@yesua.edu",
-    role: "Student",
-    status: "pending",
-    department: "Computer Science",
-    createdAt: "2024-03-15",
-    avatar: "https://i.pravatar.cc/150?u=6",
-  },
-]
+import { getUsers, createUser, updateUserRole, deleteUser, User } from "@/lib/api/admin-client"
 
 const availableRoles = [
-  { value: "admin", label: "Admin", description: "Full system access" },
-  { value: "professor", label: "Professor", description: "Create and manage courses" },
-  { value: "department_head", label: "Department Head", description: "Manage department users" },
+  { value: "platform_admin", label: "Admin", description: "Full system access" },
+  { value: "teacher", label: "Teacher", description: "Create and manage courses" },
   { value: "student", label: "Student", description: "Access enrolled courses" },
-  { value: "guest", label: "Guest", description: "Limited read-only access" },
+  { value: "technician", label: "Technician", description: "System maintenance" },
 ]
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  async function loadUsers() {
+    setIsLoading(true)
+    try {
+      const data = await getUsers()
+      setUsers(data || [])
+    } catch (error) {
+      console.error('Failed to load users:', error)
+      setUsers([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesRole = roleFilter === "all" || user.role.toLowerCase() === roleFilter.toLowerCase()
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter
+    const matchesStatus = statusFilter === "all" || (user.status || 'active') === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   })
 
-  const handleAddUser = (userData: Omit<User, "id" | "createdAt">) => {
-    const newUser: User = {
-      ...userData,
-      id: String(Date.now()),
-      createdAt: new Date().toISOString().split("T")[0],
+  const handleAddUser = async (userData: Omit<User, "id" | "createdAt">) => {
+    try {
+      const newUser = await createUser({
+        email: userData.email,
+        name: userData.name,
+        password: "tempPassword123", // Should be generated or sent via email
+        role: userData.role,
+      })
+      setUsers([...users, newUser])
+      setIsModalOpen(false)
+    } catch (error) {
+      console.error('Failed to create user:', error)
+      alert('Failed to create user. Please try again.')
     }
-    setUsers([...users, newUser])
-    setIsModalOpen(false)
   }
 
-  const handleEditUser = (userData: Omit<User, "id" | "createdAt">) => {
+  const handleEditUser = async (userData: Omit<User, "id" | "createdAt">) => {
     if (!editingUser) return
-    setUsers(users.map((u) => (u.id === editingUser.id ? { ...u, ...userData } : u)))
-    setEditingUser(null)
-    setIsModalOpen(false)
+    try {
+      await updateUserRole(editingUser.id, userData.role)
+      await loadUsers() // Reload to get updated data
+      setEditingUser(null)
+      setIsModalOpen(false)
+    } catch (error) {
+      console.error('Failed to update user:', error)
+      alert('Failed to update user. Please try again.')
+    }
   }
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter((u) => u.id !== id))
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await deleteUser(id)
+      setUsers(users.filter((u) => u.id !== id))
+    } catch (error) {
+      console.error('Failed to delete user:', error)
+      alert('Failed to delete user. Please try again.')
+    }
   }
 
   const openAddModal = () => {
@@ -135,6 +97,19 @@ export default function UserManagementPage() {
     setIsModalOpen(true)
   }
 
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading users...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -145,7 +120,9 @@ export default function UserManagementPage() {
               User Management
             </h2>
             <p className="text-slate-500 mt-1">
-              Add, edit, or remove users and assign roles to control system access.
+              {users.length === 0 
+                ? "No users found in the system." 
+                : "Add, edit, or remove users and assign roles to control system access."}
             </p>
           </div>
           <button
