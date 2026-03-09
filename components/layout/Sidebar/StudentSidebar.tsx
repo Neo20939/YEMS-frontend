@@ -11,6 +11,7 @@ import {
   CheckSquare,
   BarChart3,
   Settings,
+  ClipboardCheck,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ interface SidebarProps {
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Exams", href: "/exams", icon: AlertCircle },
+  { name: "Mid Term", href: "/exams/midterm", icon: ClipboardCheck },
   { name: "Live Classes", href: "/live-lessons", icon: Radio },
   { name: "Notes", href: "/notes", icon: BookOpen },
   { name: "Assignments", href: "/assignments", icon: CheckSquare },

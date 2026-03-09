@@ -4,9 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   GraduationCap,
-  LayoutDashboard,
   BookOpen,
-  FileText,
   CheckSquare,
   Settings,
   ClipboardCheck,
@@ -18,11 +16,9 @@ interface TeacherSidebarProps {
 }
 
 const navItems = [
-  { name: "Dashboard", href: "/teachers/dashboard", icon: LayoutDashboard },
-  { name: "Notes", href: "/teachers/notes", icon: BookOpen },
+  { name: "Manage Notes", href: "/teachers/notes/upload", icon: BookOpen },
   { name: "Assignments", href: "/teachers/assignments", icon: CheckSquare },
-  { name: "Mid Term Test", href: "/teachers/exams/midterm", icon: FileText },
-  { name: "Examination", href: "/teachers/exams", icon: ClipboardCheck },
+  { name: "Set Exam", href: "/teachers/exams/setup", icon: ClipboardCheck },
 ]
 
 export default function TeacherSidebar({

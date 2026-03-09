@@ -116,15 +116,15 @@ export default function AssessmentExamsSetupPage() {
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div className="bg-white p-3 rounded-md border border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Multiple Choice</div>
-                        <input className="w-16 text-center bg-transparent border-b border-gray-300 focus:border-primary outline-none font-semibold text-gray-900" type="number" value="20"/>
+                        <input key="mc-questions" className="w-16 text-center bg-transparent border-b border-gray-300 focus:border-primary outline-none font-semibold text-gray-900" type="number" defaultValue={20}/>
                       </div>
                       <div className="bg-white p-3 rounded-md border border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Short Answer</div>
-                        <input className="w-16 text-center bg-transparent border-b border-gray-300 focus:border-primary outline-none font-semibold text-gray-900" type="number" value="5"/>
+                        <input key="sa-questions" className="w-16 text-center bg-transparent border-b border-gray-300 focus:border-primary outline-none font-semibold text-gray-900" type="number" defaultValue={5}/>
                       </div>
                       <div className="bg-white p-3 rounded-md border border-gray-200">
                         <div className="text-xs text-gray-500 mb-1">Essay</div>
-                        <input className="w-16 text-center bg-transparent border-b border-gray-300 focus:border-primary outline-none font-semibold text-gray-900" type="number" value="1"/>
+                        <input key="essay-questions" className="w-16 text-center bg-transparent border-b border-gray-300 focus:border-primary outline-none font-semibold text-gray-900" type="number" defaultValue={1}/>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-between items-center text-sm">
