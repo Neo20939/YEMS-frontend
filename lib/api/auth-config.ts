@@ -135,14 +135,20 @@ export function clearAuthToken(): void {
  * Get user redirect path based on role
  */
 export function getRedirectPathByRole(role: string): string {
-  switch (role.toLowerCase()) {
-    case 'admin':
-      return '/admin'
-    case 'teacher':
-    case 'professor':
-      return '/teachers/dashboard'
-    case 'student':
-    default:
-      return '/dashboard'
+  const normalizedRole = role.toLowerCase().trim()
+  
+  if (normalizedRole === 'admin' || normalizedRole === 'administrator') {
+    return '/admin'
   }
+  
+  if (normalizedRole === 'teacher' || normalizedRole === 'professor' || normalizedRole === 'instructor') {
+    return '/teachers/dashboard'
+  }
+  
+  if (normalizedRole === 'student') {
+    return '/dashboard'
+  }
+  
+  // Default to student dashboard for unknown roles
+  return '/dashboard'
 }

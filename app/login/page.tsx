@@ -27,9 +27,13 @@ export default function LoginPage() {
         email: formData.email,
         password: formData.password,
       })
-      
+
+      console.log("Login response:", response)
+      console.log("User role:", response.user.role)
+
       // Redirect based on user role
       const redirectPath = getRedirectPathByRole(response.user.role)
+      console.log("Redirect path:", redirectPath)
       router.push(redirectPath)
     } catch (err) {
       const apiError = err as ApiError
