@@ -4,12 +4,6 @@ import { useState } from "react"
 import {
   Search,
   Bell,
-  Calculator,
-  PenTool,
-  FlaskConical,
-  TestTube,
-  BookOpen,
-  Dna,
   Clock,
   ChevronDown,
 } from "lucide-react"
@@ -17,7 +11,6 @@ import {
 interface Assignment {
   id: string
   subject: string
-  subjectIcon: React.ReactNode
   title: string
   description: string
   timeEstimate: string
@@ -31,7 +24,6 @@ const assignments: Assignment[] = [
   {
     id: "1",
     subject: "Mathematics",
-    subjectIcon: <Calculator className="w-5 h-5" />,
     title: "Linear Algebra Worksheet",
     description:
       "Complete exercises 1-15 on page 42 regarding vector spaces and linear transformations.",
@@ -43,7 +35,6 @@ const assignments: Assignment[] = [
   {
     id: "2",
     subject: "History",
-    subjectIcon: <PenTool className="w-5 h-5" />,
     title: "The Industrial Revolution Essay",
     description:
       "Write a 1000-word essay analyzing the social and economic impacts of the Industrial Revolution in Europe.",
@@ -56,7 +47,6 @@ const assignments: Assignment[] = [
   {
     id: "3",
     subject: "Physics",
-    subjectIcon: <FlaskConical className="w-5 h-5" />,
     title: "Kinematics Lab Report",
     description:
       "Submit your lab findings on projectile motion. Include graphs and error analysis.",
@@ -69,7 +59,6 @@ const assignments: Assignment[] = [
   {
     id: "4",
     subject: "Chemistry",
-    subjectIcon: <TestTube className="w-5 h-5" />,
     title: "Periodic Table Quiz Prep",
     description:
       "Review groups 1, 2, 17, and 18. Complete the practice quiz online.",
@@ -82,7 +71,6 @@ const assignments: Assignment[] = [
   {
     id: "5",
     subject: "English Lit",
-    subjectIcon: <BookOpen className="w-5 h-5" />,
     title: "Shakespeare Sonnet Analysis",
     description:
       "Read Sonnet 18 and Sonnet 130. Compare the themes of love and time.",
@@ -94,7 +82,6 @@ const assignments: Assignment[] = [
   {
     id: "6",
     subject: "Biology",
-    subjectIcon: <Dna className="w-5 h-5" />,
     title: "Cell Division Project",
     description:
       "Create a digital presentation explaining the stages of Mitosis and Meiosis.",
@@ -191,9 +178,6 @@ export default function AssignmentsPage() {
                 {/* Card Header */}
                 <div className="bg-primary/5 p-5 border-b border-primary/10 flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                      {assignment.subjectIcon}
-                    </div>
                     <h3 className="font-bold text-primary text-lg">
                       {assignment.subject}
                     </h3>

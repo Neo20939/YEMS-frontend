@@ -3,3 +3,5 @@
 // Example placeholder:
 // export { useAuth } from './useAuth'
 // export { useTheme } from './useTheme'
+
+export { useClasses } from './useClasses'

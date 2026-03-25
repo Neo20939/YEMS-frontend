@@ -4,7 +4,10 @@ import AdminLayout from "@/components/admin/AdminLayout"
 import { useState, useEffect } from "react"
 import UserModal from "@/components/admin/UserModal"
 import UserTable from "@/components/admin/UserTable"
+import TeacherSubjectAssignment from "@/components/admin/TeacherSubjectAssignment"
 import { getUsers, createUser, updateUserRole, deleteUser, User } from "@/lib/api/admin-client"
+import { useUser } from "@/contexts/UserContext"
+import { useRouter } from "next/navigation"
 
 const availableRoles = [
   { value: "platform_admin", label: "Admin", description: "Full system access" },
@@ -13,14 +16,30 @@ const availableRoles = [
   { value: "technician", label: "Technician", description: "System maintenance" },
 ]
 
+interface UserWithPassword extends User {
+  password?: string
+}
+
 export default function UserManagementPage() {
+  const router = useRouter()
+  const { user, isLoading: userLoading } = useUser()
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSubjectAssignmentOpen, setIsSubjectAssignmentOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [assigningSubjectUser, setAssigningSubjectUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+
+  // Check authentication on mount
+  useEffect(() => {
+    if (!userLoading && !user) {
+      // Not logged in, redirect to login
+      router.push('/login')
+    }
+  }, [user, userLoading, router])
 
   useEffect(() => {
     loadUsers()
@@ -30,7 +49,8 @@ export default function UserManagementPage() {
     setIsLoading(true)
     try {
       const data = await getUsers()
-      setUsers(data || [])
+      console.log('Loaded users:', data)
+      setUsers(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Failed to load users:', error)
       setUsers([])
@@ -39,35 +59,65 @@ export default function UserManagementPage() {
     }
   }
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = Array.isArray(users) ? users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesRole = roleFilter === "all" || user.role.toLowerCase() === roleFilter.toLowerCase()
     const matchesStatus = statusFilter === "all" || (user.status || 'active') === statusFilter
     return matchesSearch && matchesRole && matchesStatus
-  })
+  }) : []
 
-  const handleAddUser = async (userData: Omit<User, "id" | "createdAt">) => {
+  const handleAddUser = async (userData: Omit<User, "id" | "createdAt"> & { password?: string }) => {
     try {
+      if (!userData.password) {
+        alert('Please enter a password for the new user')
+        return
+      }
+
+      // Check if user is authenticated
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        alert('You are not logged in. Please log in to create users.')
+        window.location.href = '/login'
+        return
+      }
+
+      console.log('Creating user with data:', userData)
       const newUser = await createUser({
         email: userData.email,
         name: userData.name,
-        password: "tempPassword123", // Should be generated or sent via email
+        password: userData.password,
         role: userData.role,
       })
+      console.log('User created successfully:', newUser)
       setUsers([...users, newUser])
       setIsModalOpen(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create user:', error)
-      alert('Failed to create user. Please try again.')
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+
+      let errorMessage = 'Failed to create user. '
+      if (error.response?.status === 401) {
+        errorMessage += 'You are not authorized. Please log in again.'
+        window.location.href = '/login'
+      } else if (error.response?.status === 400) {
+        errorMessage += error.response?.data?.message || 'Invalid data provided.'
+      } else if (error.response?.status === 409) {
+        errorMessage += 'User with this email already exists.'
+      } else {
+        errorMessage += error.message || 'Please try again.'
+      }
+      alert(errorMessage)
     }
   }
 
-  const handleEditUser = async (userData: Omit<User, "id" | "createdAt">) => {
+  const handleEditUser = async (userData: Omit<User, "id" | "createdAt"> & { password?: string }) => {
     if (!editingUser) return
     try {
       await updateUserRole(editingUser.id, userData.role)
+      // Note: Password update would require a separate endpoint if supported by backend
       await loadUsers() // Reload to get updated data
       setEditingUser(null)
       setIsModalOpen(false)
@@ -87,6 +137,11 @@ export default function UserManagementPage() {
     }
   }
 
+  const handleAssignSubjects = (user: User) => {
+    setAssigningSubjectUser(user)
+    setIsSubjectAssignmentOpen(true)
+  }
+
   const openAddModal = () => {
     setEditingUser(null)
     setIsModalOpen(true)
@@ -97,17 +152,23 @@ export default function UserManagementPage() {
     setIsModalOpen(true)
   }
 
-  if (isLoading) {
+  // Show loading while checking authentication or loading users
+  if (userLoading || isLoading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading users...</p>
+            <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         </div>
       </AdminLayout>
     )
+  }
+
+  // If not authenticated, don't render the page (will redirect)
+  if (!user) {
+    return null
   }
 
   return (
@@ -235,6 +296,7 @@ export default function UserManagementPage() {
           users={filteredUsers}
           onEdit={openEditModal}
           onDelete={handleDeleteUser}
+          onAssignSubjects={handleAssignSubjects}
         />
 
         {/* Pagination Info */}
@@ -264,6 +326,18 @@ export default function UserManagementPage() {
         user={editingUser}
         roles={availableRoles}
       />
+
+      {/* Teacher Subject Assignment Modal */}
+      {assigningSubjectUser && (
+        <TeacherSubjectAssignment
+          teacher={assigningSubjectUser}
+          onClose={() => {
+            setIsSubjectAssignmentOpen(false)
+            setAssigningSubjectUser(null)
+            loadUsers() // Reload users to get updated subject assignments
+          }}
+        />
+      )}
     </AdminLayout>
   )
 }

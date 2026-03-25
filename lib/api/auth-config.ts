@@ -53,6 +53,7 @@ export type ApiError = {
   message: string
   code?: string
   status?: number
+  details?: unknown
 }
 
 /**
@@ -156,11 +157,11 @@ export function getRedirectPathByRole(role: string): string {
     return '/dashboard'
   }
   
-  // Technician role - treat as teacher for now
+  // Technician role
   if (normalizedRole === 'technician') {
-    return '/teachers/dashboard'
+    return '/technician/dashboard'
   }
-  
+
   // Default to student dashboard for unknown roles
   return '/dashboard'
 }

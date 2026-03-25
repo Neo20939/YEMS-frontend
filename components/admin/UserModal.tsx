@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { User } from "@/app/admin/users/page"
+import { User } from "@/lib/api/admin-client"
 
 interface Role {
   value: string
@@ -12,9 +12,10 @@ interface Role {
 interface UserModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (userData: Omit<User, "id" | "createdAt">) => void
+  onSubmit: (userData: Omit<User, "id" | "createdAt" | "updatedAt"> & { password?: string }) => void
   user: User | null
   roles: Role[]
+  lockedRole?: string // If set, role selection is disabled and locked to this value
 }
 
 export default function UserModal({
@@ -23,45 +24,46 @@ export default function UserModal({
   onSubmit,
   user,
   roles,
+  lockedRole,
 }: UserModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     role: "student",
     status: "active" as User["status"],
-    department: "",
+    password: "",
     avatar: "",
   })
 
   useEffect(() => {
+    const initialRole = lockedRole || (user ? user.role.toLowerCase().replace(/\s+/g, "_") : "student")
     if (user) {
       setFormData({
         name: user.name,
         email: user.email,
-        role: user.role.toLowerCase().replace(/\s+/g, "_"),
+        role: initialRole,
         status: user.status,
-        department: user.department,
+        password: "",
         avatar: user.avatar || "",
       })
     } else {
       setFormData({
         name: "",
         email: "",
-        role: "student",
+        role: initialRole,
         status: "active",
-        department: "",
+        password: "",
         avatar: "",
       })
     }
-  }, [user, isOpen])
+  }, [user, isOpen, lockedRole])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const roleLabel = roles.find((r) => r.value === formData.role)?.label || formData.role
+    // Send the role value (e.g., 'platform_admin', 'teacher') directly
     onSubmit({
       ...formData,
-      role: roleLabel,
-      avatar: formData.avatar || `https://i.pravatar.cc/150?u=${Date.now()}`,
+      role: formData.role,
     })
   }
 
@@ -140,40 +142,48 @@ export default function UserModal({
           {/* Role Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Role
+              Role {lockedRole && <span className="text-slate-400 font-normal">(locked to {lockedRole})</span>}
             </label>
-            <div className="space-y-1.5">
-              {roles.map((role) => (
-                <label
-                  key={role.value}
-                  className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                    formData.role === role.value
-                      ? "border-primary bg-primary/5"
-                      : "border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="role"
-                    value={role.value}
-                    checked={formData.role === role.value}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="size-4 text-primary focus:ring-primary"
-                  />
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                      {role.label}
-                    </p>
-                    <p className="text-[10px] text-slate-500">{role.description}</p>
-                  </div>
-                  {formData.role === role.value && (
-                    <span className="material-symbols-outlined text-primary text-base">
-                      check_circle
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
+            {lockedRole ? (
+              <div className="p-3 bg-stone-100 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
+                  {lockedRole.replace('_', ' ')}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {roles.map((role) => (
+                  <label
+                    key={role.value}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                      formData.role === role.value
+                        ? "border-primary bg-primary/5"
+                        : "border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value={role.value}
+                      checked={formData.role === role.value}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      className="size-4 text-primary focus:ring-primary"
+                    />
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                        {role.label}
+                      </p>
+                      <p className="text-[10px] text-slate-500">{role.description}</p>
+                    </div>
+                    {formData.role === role.value && (
+                      <span className="material-symbols-outlined text-primary text-base">
+                        check_circle
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Status */}
@@ -203,22 +213,23 @@ export default function UserModal({
             </div>
           </div>
 
-          {/* Department */}
+          {/* Password */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Department
+              Password {user && <span className="text-slate-400 font-normal">(leave blank to keep current)</span>}
             </label>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                business
+                lock
               </span>
               <input
-                type="text"
-                required
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                type="password"
+                required={!user}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
-                placeholder="Enter department"
+                placeholder={user ? "Enter new password (or leave blank)" : "Enter password"}
+                minLength={6}
               />
             </div>
           </div>

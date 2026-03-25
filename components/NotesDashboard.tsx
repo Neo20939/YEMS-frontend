@@ -1,12 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, Fragment } from "react";
 import {
   BookOpen,
-  Code,
-  FlaskConical,
-  Calculator,
-  Languages,
   Download,
   Search,
   ChevronLeft,
@@ -19,73 +15,243 @@ import {
 interface Note {
   id: string;
   subject: string;
-  subjectIcon: "code" | "science" | "functions" | "language";
   week: string;
   title: string;
   description: string;
   term: string;
   date: string;
-  iconColor: string;
 }
 
-const SUBJECT_ICONS = {
-  code: Code,
-  science: FlaskConical,
-  functions: Calculator,
-  language: Languages,
-};
-
-const ICON_COLORS = {
-  code: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500",
-  science: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500",
-  functions: "bg-purple-50 dark:bg-purple-900/30 text-purple-500",
-  language: "bg-amber-50 dark:bg-amber-900/30 text-amber-500",
-};
-
 const SAMPLE_NOTES: Note[] = [
+  // Chemistry - 5 weeks
   {
-    id: "1",
-    subject: "Computer Studies",
-    subjectIcon: "code",
+    id: "chem-1",
+    subject: "Chemistry",
     week: "01",
-    title: "Revision / Basic Programming",
-    description: "Introduction to Python and Logic",
+    title: "Introduction to Organic Chemistry",
+    description: "Basic concepts and nomenclature",
     term: "SECOND",
-    date: "18 Jan '26",
-    iconColor: "indigo",
+    date: "15 Jan '26",
   },
   {
-    id: "2",
-    subject: "Biology",
-    subjectIcon: "science",
+    id: "chem-2",
+    subject: "Chemistry",
     week: "02",
-    title: "Cell Biology and Genetics",
-    description: "Understanding DNA structure and replication",
+    title: "Alkanes and Alkenes",
+    description: "Properties and reactions",
     term: "SECOND",
-    date: "20 Jan '26",
-    iconColor: "emerald",
+    date: "22 Jan '26",
   },
   {
-    id: "3",
-    subject: "Mathematics",
-    subjectIcon: "functions",
+    id: "chem-3",
+    subject: "Chemistry",
+    week: "03",
+    title: "Alcohols and Carboxylic Acids",
+    description: "Structure and functional groups",
+    term: "SECOND",
+    date: "29 Jan '26",
+  },
+  {
+    id: "chem-4",
+    subject: "Chemistry",
+    week: "04",
+    title: "Polymers and Macromolecules",
+    description: "Synthesis and applications",
+    term: "SECOND",
+    date: "05 Feb '26",
+  },
+  {
+    id: "chem-5",
+    subject: "Chemistry",
+    week: "05",
+    title: "Chemical Industries",
+    description: "Industrial processes and applications",
+    term: "SECOND",
+    date: "12 Feb '26",
+  },
+  // Computer Studies - 5 weeks
+  {
+    id: "comp-1",
+    subject: "Computer Studies",
+    week: "01",
+    title: "Introduction to Python Programming",
+    description: "Basic syntax and data types",
+    term: "SECOND",
+    date: "16 Jan '26",
+  },
+  {
+    id: "comp-2",
+    subject: "Computer Studies",
     week: "02",
-    title: "Calculus: Differentiation",
-    description: "First principles and power rule",
+    title: "Control Structures",
+    description: "Loops and conditional statements",
+    term: "SECOND",
+    date: "23 Jan '26",
+  },
+  {
+    id: "comp-3",
+    subject: "Computer Studies",
+    week: "03",
+    title: "Functions and Modules",
+    description: "Code reusability and organization",
+    term: "SECOND",
+    date: "30 Jan '26",
+  },
+  {
+    id: "comp-4",
+    subject: "Computer Studies",
+    week: "04",
+    title: "Data Structures",
+    description: "Lists, tuples, and dictionaries",
+    term: "SECOND",
+    date: "06 Feb '26",
+  },
+  {
+    id: "comp-5",
+    subject: "Computer Studies",
+    week: "05",
+    title: "File Handling",
+    description: "Reading and writing files",
+    term: "SECOND",
+    date: "13 Feb '26",
+  },
+  // English - 5 weeks
+  {
+    id: "eng-1",
+    subject: "English",
+    week: "01",
+    title: "Comprehension Skills",
+    description: "Reading and understanding passages",
+    term: "SECOND",
+    date: "14 Jan '26",
+  },
+  {
+    id: "eng-2",
+    subject: "English",
+    week: "02",
+    title: "Essay Writing: Narrative",
+    description: "Storytelling techniques",
     term: "SECOND",
     date: "21 Jan '26",
-    iconColor: "purple",
   },
   {
-    id: "4",
-    subject: "English Language",
-    subjectIcon: "language",
+    id: "eng-3",
+    subject: "English",
     week: "03",
     title: "Essay Writing: Expository",
     description: "Structuring arguments and evidence",
     term: "SECOND",
-    date: "22 Jan '26",
-    iconColor: "amber",
+    date: "28 Jan '26",
+  },
+  {
+    id: "eng-4",
+    subject: "English",
+    week: "04",
+    title: "Letter Writing",
+    description: "Formal and informal letters",
+    term: "SECOND",
+    date: "04 Feb '26",
+  },
+  {
+    id: "eng-5",
+    subject: "English",
+    week: "05",
+    title: "Speech and Debate",
+    description: "Public speaking skills",
+    term: "SECOND",
+    date: "11 Feb '26",
+  },
+  // Mathematics - 5 weeks
+  {
+    id: "math-1",
+    subject: "Mathematics",
+    week: "01",
+    title: "Revision: Algebra Basics",
+    description: "Review of fundamental concepts",
+    term: "SECOND",
+    date: "13 Jan '26",
+  },
+  {
+    id: "math-2",
+    subject: "Mathematics",
+    week: "02",
+    title: "Calculus: Differentiation",
+    description: "First principles and power rule",
+    term: "SECOND",
+    date: "20 Jan '26",
+  },
+  {
+    id: "math-3",
+    subject: "Mathematics",
+    week: "03",
+    title: "Calculus: Integration",
+    description: "Definite and indefinite integrals",
+    term: "SECOND",
+    date: "27 Jan '26",
+  },
+  {
+    id: "math-4",
+    subject: "Mathematics",
+    week: "04",
+    title: "Statistics and Probability",
+    description: "Mean, median, mode and probability theory",
+    term: "SECOND",
+    date: "03 Feb '26",
+  },
+  {
+    id: "math-5",
+    subject: "Mathematics",
+    week: "05",
+    title: "Trigonometry",
+    description: "Sine, cosine and tangent rules",
+    term: "SECOND",
+    date: "10 Feb '26",
+  },
+  // CRS - 5 weeks
+  {
+    id: "crs-1",
+    subject: "CRS",
+    week: "01",
+    title: "The Creation Story",
+    description: "Genesis account of creation",
+    term: "SECOND",
+    date: "17 Jan '26",
+  },
+  {
+    id: "crs-2",
+    subject: "CRS",
+    week: "02",
+    title: "The Fall of Man",
+    description: "Adam and Eve in the garden",
+    term: "SECOND",
+    date: "24 Jan '26",
+  },
+  {
+    id: "crs-3",
+    subject: "CRS",
+    week: "03",
+    title: "The Life of Abraham",
+    description: "Faith and covenant",
+    term: "SECOND",
+    date: "31 Jan '26",
+  },
+  {
+    id: "crs-4",
+    subject: "CRS",
+    week: "04",
+    title: "The Exodus",
+    description: "Moses and the deliverance",
+    term: "SECOND",
+    date: "07 Feb '26",
+  },
+  {
+    id: "crs-5",
+    subject: "CRS",
+    week: "05",
+    title: "The Ten Commandments",
+    description: "God's law given to Moses",
+    term: "SECOND",
+    date: "14 Feb '26",
   },
 ];
 
@@ -95,18 +261,24 @@ interface NotesDashboardProps {
   onSearch?: (query: string) => void;
   onTermChange?: (term: string) => void;
   onViewOtherSubjects?: () => void;
+  isLoading?: boolean;
 }
 
 export function NotesDashboard({
-  notes = SAMPLE_NOTES,
+  notes,
   onNoteDownload = () => {},
   onSearch = () => {},
   onTermChange = () => {},
   onViewOtherSubjects = () => {},
+  isLoading = false,
 }: NotesDashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTerm, setSelectedTerm] = useState("Second Term");
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Use mock data if notes is undefined or empty array (for development/testing)
+  const displayNotes = (!notes || notes.length === 0) && !isLoading ? SAMPLE_NOTES : (notes || []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -120,8 +292,92 @@ export function NotesDashboard({
     onTermChange(term);
   };
 
-  const totalPages = 3;
-  const totalResults = 12;
+  // Group notes by subject (alphabetically), then by week (numerically)
+  const groupedNotes = useMemo(() => {
+    const groups: Record<string, Record<string, Note[]>> = {};
+
+    displayNotes.forEach((note) => {
+      if (!groups[note.subject]) {
+        groups[note.subject] = {};
+      }
+      if (!groups[note.subject][note.week]) {
+        groups[note.subject][note.week] = [];
+      }
+      groups[note.subject][note.week].push(note);
+    });
+
+    // Sort subjects alphabetically
+    const sortedSubjects = Object.keys(groups).sort();
+
+    // Sort weeks numerically within each subject
+    const result: Array<{ subject: string; weeks: Array<{ week: string; notes: Note[] }> }> = [];
+
+    sortedSubjects.forEach((subject) => {
+      const sortedWeeks = Object.keys(groups[subject]).sort((a, b) => parseInt(a) - parseInt(b));
+      result.push({
+        subject,
+        weeks: sortedWeeks.map((week) => ({
+          week,
+          notes: groups[subject][week],
+        })),
+      });
+    });
+
+    return result;
+  }, [displayNotes]);
+
+  // Flatten grouped notes for pagination
+  const flatNotesList = useMemo(() => {
+    const flat: Array<{ subject: string; week: string; note: Note }> = [];
+    groupedNotes.forEach(({ subject, weeks }) => {
+      weeks.forEach(({ week, notes: weekNotes }) => {
+        weekNotes.forEach((note) => {
+          flat.push({ subject, week, note });
+        });
+      });
+    });
+    return flat;
+  }, [groupedNotes]);
+
+  // Calculate pagination
+  const totalResults = flatNotesList.length;
+  const totalPages = Math.ceil(totalResults / itemsPerPage);
+
+  // Get current page notes
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentNotes = flatNotesList.slice(startIndex, endIndex);
+
+  // Regroup current page notes for display
+  const paginatedGroupedNotes = useMemo(() => {
+    const groups: Record<string, Record<string, Note[]>> = {};
+
+    currentNotes.forEach(({ subject, week, note }) => {
+      if (!groups[subject]) {
+        groups[subject] = {};
+      }
+      if (!groups[subject][week]) {
+        groups[subject][week] = [];
+      }
+      groups[subject][week].push(note);
+    });
+
+    const sortedSubjects = Object.keys(groups).sort();
+    const result: Array<{ subject: string; weeks: Array<{ week: string; notes: Note[] }> }> = [];
+
+    sortedSubjects.forEach((subject) => {
+      const sortedWeeks = Object.keys(groups[subject]).sort((a, b) => parseInt(a) - parseInt(b));
+      result.push({
+        subject,
+        weeks: sortedWeeks.map((week) => ({
+          week,
+          notes: groups[subject][week],
+        })),
+      });
+    });
+
+    return result;
+  }, [currentNotes]);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-200">
@@ -225,63 +481,100 @@ export function NotesDashboard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {notes.map((note) => {
-                  const IconComponent =
-                    SUBJECT_ICONS[note.subjectIcon] || BookOpen;
-                  const colorClass =
-                    ICON_COLORS[note.subjectIcon] ||
-                    "bg-slate-50 dark:bg-slate-800 text-slate-500";
-
-                  return (
-                    <tr
-                      key={note.id}
-                      className="hover:bg-rose-50/30 dark:hover:bg-slate-800/50 transition-colors"
-                    >
+                {isLoading ? (
+                  // Loading Skeleton
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
                       <td className="px-6 py-6">
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}
-                          >
-                            <IconComponent className="w-5 h-5" />
-                          </div>
-                          <span className="font-semibold text-sm">
-                            {note.subject}
-                          </span>
+                          <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                          <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded" />
                         </div>
                       </td>
                       <td className="px-6 py-6 text-center md:text-left">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500">
-                          {note.week}
-                        </span>
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 mx-auto" />
                       </td>
                       <td className="px-6 py-6">
-                        <p className="font-bold text-sm text-slate-800 dark:text-slate-100 uppercase">
-                          {note.title}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {note.description}
-                        </p>
+                        <div className="space-y-2">
+                          <div className="h-4 w-48 bg-slate-200 dark:bg-slate-700 rounded" />
+                          <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded" />
+                        </div>
                       </td>
                       <td className="px-6 py-6">
-                        <span className="bg-rose-100 dark:bg-rose-900/40 text-primary text-[10px] font-bold px-2 py-1 rounded-full">
-                          {note.term}
-                        </span>
+                        <div className="w-16 h-5 rounded-full bg-slate-200 dark:bg-slate-700" />
                       </td>
-                      <td className="px-6 py-6 text-sm text-slate-500">
-                        {note.date}
+                      <td className="px-6 py-6">
+                        <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
                       </td>
                       <td className="px-6 py-6 text-center">
-                        <button
-                          onClick={() => onNoteDownload(note.id)}
-                          className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
-                          aria-label={`Download ${note.title}`}
-                        >
-                          <Download className="w-5 h-5" />
-                        </button>
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 mx-auto" />
                       </td>
                     </tr>
-                  );
-                })}
+                  ))
+                ) : displayNotes.length === 0 ? (
+                  // Empty State
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center">
+                      <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 font-medium">No notes available</p>
+                      <p className="text-sm text-slate-400 mt-1">
+                        Check back later for new study materials
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  // Grouped notes by subject and week
+                  paginatedGroupedNotes.map(({ subject, weeks }) => (
+                    <Fragment key={subject}>
+                      {weeks.map(({ week, notes: weekNotes }) =>
+                        weekNotes.map((note, idx) => {
+                          return (
+                            <tr
+                              key={note.id}
+                              className="hover:bg-rose-50/30 dark:hover:bg-slate-800/50 transition-colors"
+                            >
+                              <td className="px-6 py-6">
+                                <span className="font-semibold text-sm">
+                                  {subject}
+                                </span>
+                              </td>
+                              <td className="px-6 py-6 text-center md:text-left">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500">
+                                  {week}
+                                </span>
+                              </td>
+                              <td className="px-6 py-6">
+                                <p className="font-bold text-sm text-slate-800 dark:text-slate-100 uppercase">
+                                  {note.title}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  {note.description}
+                                </p>
+                              </td>
+                              <td className="px-6 py-6">
+                                <span className="bg-rose-100 dark:bg-rose-900/40 text-primary text-[10px] font-bold px-2 py-1 rounded-full">
+                                  {note.term}
+                                </span>
+                              </td>
+                              <td className="px-6 py-6 text-sm text-slate-500">
+                                {note.date}
+                              </td>
+                              <td className="px-6 py-6 text-center">
+                                <button
+                                  onClick={() => onNoteDownload(note.id)}
+                                  className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors"
+                                  aria-label={`Download ${note.title}`}
+                                >
+                                  <Download className="w-5 h-5" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </Fragment>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -291,7 +584,7 @@ export function NotesDashboard({
             <p className="text-xs text-slate-400">
               Showing{" "}
               <span className="font-bold text-slate-700 dark:text-slate-300">
-                1 to 5
+                {totalResults > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, totalResults)}
               </span>{" "}
               of{" "}
               <span className="font-bold text-slate-700 dark:text-slate-300">
@@ -307,7 +600,7 @@ export function NotesDashboard({
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              {[1, 2, 3].map((page) => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}

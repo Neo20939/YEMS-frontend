@@ -8,6 +8,10 @@ import { useUser } from "@/contexts/UserContext"
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: "dashboard" },
   { name: "User Management", href: "/admin/users", icon: "group" },
+  { name: "Teachers", href: "/admin/teachers", icon: "person" },
+  { name: "Students", href: "/admin/students", icon: "school" },
+  { name: "Subjects", href: "/admin/subjects", icon: "menu_book" },
+  { name: "Classes", href: "/admin/classes", icon: "class" },
   { name: "Roles & Permissions", href: "/admin/roles", icon: "shield_person" },
   { name: "Audit Logs", href: "/admin/audit-logs", icon: "history_edu" },
   { name: "System Settings", href: "/admin/settings", icon: "settings" },

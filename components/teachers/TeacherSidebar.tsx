@@ -8,6 +8,8 @@ import {
   CheckSquare,
   Settings,
   ClipboardCheck,
+  Radio,
+  ClipboardList,
 } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
 
@@ -19,7 +21,10 @@ interface TeacherSidebarProps {
 const navItems = [
   { name: "Manage Notes", href: "/teachers/notes/upload", icon: BookOpen },
   { name: "Assignments", href: "/teachers/assignments", icon: CheckSquare },
-  { name: "Set Exam", href: "/teachers/exams/setup", icon: ClipboardCheck },
+  { name: "Live Classes", href: "/teachers/live-classes", icon: Radio },
+  { name: "Create Exam", href: "/teachers/exams/create", icon: ClipboardCheck },
+  { name: "Add Questions", href: "/teachers/exams/setup", icon: Settings },
+  { name: "Student Results", href: "/teachers/results", icon: ClipboardList },
 ]
 
 export default function TeacherSidebar({

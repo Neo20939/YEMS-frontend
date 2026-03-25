@@ -1,18 +1,22 @@
 "use client"
 
-import { User } from "@/app/admin/users/page"
+import { User } from "@/lib/api/admin-client"
 import { useState } from "react"
 
 interface UserTableProps {
   users: User[]
   onEdit: (user: User) => void
   onDelete: (id: string) => void
+  onAssignSubjects?: (user: User) => void
+  onViewSubjects?: (user: User) => void
 }
 
-export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
+export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, onViewSubjects }: UserTableProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  const getStatusBadge = (status: User["status"]) => {
+  const getStatusBadge = (status: User["status"] | undefined) => {
+    const safeStatus = status || 'pending' // Default to 'pending' if undefined
+    
     const styles = {
       active: "bg-emerald-100 text-emerald-700",
       inactive: "bg-rose-100 text-rose-700",
@@ -23,12 +27,15 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
       inactive: "block",
       pending: "schedule",
     }
+    const style = styles[safeStatus] || styles.pending
+    const icon = icons[safeStatus] || icons.pending
+    
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${styles[status]}`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${style}`}
       >
-        <span className="material-symbols-outlined text-xs">{icons[status]}</span>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        <span className="material-symbols-outlined text-xs">{icon}</span>
+        {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
       </span>
     )
   }
@@ -40,6 +47,9 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
       "Department Head": "bg-purple-100 text-purple-700",
       Student: "bg-sage/10 text-sage",
       Guest: "bg-stone-100 text-stone-700",
+      teacher: "bg-blue-100 text-blue-700",
+      platform_admin: "bg-primary/10 text-primary",
+      technician: "bg-amber-100 text-amber-700",
     }
     const style = roleStyles[role] || "bg-stone-100 text-stone-700"
     return (
@@ -65,11 +75,10 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
     <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 overflow-hidden">
       {/* Table Header */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-stone-50 dark:bg-stone-800/50 border-b border-stone-200 dark:border-stone-800 text-xs font-bold text-slate-500 uppercase tracking-wider">
-        <div className="col-span-4">User</div>
+        <div className="col-span-5">User</div>
         <div className="col-span-2">Role</div>
-        <div className="col-span-2">Department</div>
         <div className="col-span-2">Status</div>
-        <div className="col-span-2 text-right">Actions</div>
+        <div className="col-span-3 text-right">Actions</div>
       </div>
 
       {/* Table Body */}
@@ -80,15 +89,18 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
             className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
           >
             {/* User Info */}
-            <div className="col-span-4 flex items-center gap-4">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="size-12 rounded-full object-cover flex-shrink-0"
-              />
+            <div className="col-span-5 flex items-center gap-4">
+              <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-primary text-xl">person</span>
+              </div>
               <div className="min-w-0">
                 <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{user.name}</p>
                 <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                {user.assignedSubjects && user.assignedSubjects.length > 0 && (
+                  <p className="text-xs text-slate-400 mt-1">
+                    {user.assignedSubjects.length} subject(s) assigned
+                  </p>
+                )}
               </div>
             </div>
 
@@ -98,12 +110,6 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
               {getRoleBadge(user.role)}
             </div>
 
-            {/* Department */}
-            <div className="col-span-2">
-              <div className="md:hidden text-xs text-slate-500 mb-1">Department</div>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{user.department}</p>
-            </div>
-
             {/* Status */}
             <div className="col-span-2">
               <div className="md:hidden text-xs text-slate-500 mb-1">Status</div>
@@ -111,7 +117,7 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
             </div>
 
             {/* Actions */}
-            <div className="col-span-2 flex items-center justify-end gap-2">
+            <div className="col-span-3 flex items-center justify-end gap-2">
               {deleteConfirm === user.id ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-rose-600 font-medium">Sure?</span>
@@ -133,6 +139,24 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                 </div>
               ) : (
                 <>
+                  {user.role === 'teacher' && onViewSubjects && user.assignedSubjects && user.assignedSubjects.length > 0 && (
+                    <button
+                      onClick={() => onViewSubjects(user)}
+                      className="p-2 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg transition-colors"
+                      title="View assigned subjects"
+                    >
+                      <span className="material-symbols-outlined text-lg">visibility</span>
+                    </button>
+                  )}
+                  {user.role === 'teacher' && onAssignSubjects && (
+                    <button
+                      onClick={() => onAssignSubjects(user)}
+                      className="p-2 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
+                      title="Assign subjects"
+                    >
+                      <span className="material-symbols-outlined text-lg">book</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => onEdit(user)}
                     className="p-2 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"

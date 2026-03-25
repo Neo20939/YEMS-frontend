@@ -1,6 +1,6 @@
 /**
  * Admin API Client
- * 
+ *
  * Handles all admin-related API calls for user management, roles, and system stats.
  */
 
@@ -9,11 +9,23 @@ import { getAuthToken } from './auth-config'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'
 
+// Use Next.js API proxy for admin operations to avoid CORS issues
+const PROXY_BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+
 /**
  * Create axios instance with auth interceptors
  */
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Create proxy client for admin operations
+const proxyClient = axios.create({
+  baseURL: PROXY_BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -53,9 +65,9 @@ export interface User {
   role: string
   status?: 'active' | 'inactive' | 'pending'
   avatar?: string
-  department?: string
   createdAt?: string
   updatedAt?: string
+  assignedSubjects?: string[] // Subject IDs assigned to teacher
 }
 
 export interface Role {
@@ -83,6 +95,17 @@ export interface ApiError {
   message: string
   code?: string
   status?: number
+}
+
+export interface Subject {
+  id: string
+  name: string
+  code: string
+  description?: string
+  iconType?: 'math' | 'science' | 'english' | 'philosophy' | 'history' | 'computer'
+  status: 'active' | 'inactive'
+  createdAt?: string
+  updatedAt?: string
 }
 
 /**
@@ -131,11 +154,49 @@ export async function getDashboardStats(): Promise<DashboardStats> {
  */
 export async function getUsers(): Promise<User[]> {
   try {
-    const { data } = await apiClient.get<User[]>('/admin/users')
-    return data
-  } catch (error) {
-    console.error('Failed to fetch users:', error)
+    const token = getAuthToken()
+    console.log('[getUsers] Token present:', !!token)
+
+    const response = await proxyClient.get('/api/admin/users', {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+
+    console.log('[getUsers] Response status:', response.status)
+    console.log('[getUsers] Response data:', response?.data)
+
+    const data = response?.data
+
+    // Backend returns { users: [...], pagination: {...} }
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data.users)) {
+        let users = data.users.map((user: any) => ({
+          ...user,
+          status: user.isActive ? 'active' as const : 'inactive' as const,
+        }))
+        
+        // Merge localStorage subject assignments
+        if (typeof window !== 'undefined') {
+          users = users.map((user: User) => {
+            const stored = localStorage.getItem(`user_${user.id}_subjects`)
+            if (stored) {
+              return { ...user, assignedSubjects: JSON.parse(stored) }
+            }
+            return user
+          })
+        }
+        
+        console.log('[getUsers] Returning', users.length, 'users from backend')
+        return users
+      }
+    }
+
+    console.warn('[getUsers] Unexpected response format:', data)
     return []
+  } catch (error) {
+    console.error('[getUsers] Failed to fetch users from backend:', error)
+    throw error
   }
 }
 
@@ -162,14 +223,21 @@ export async function createUser(userData: {
   role: string
 }): Promise<User> {
   try {
-    const { data } = await apiClient.post<User>('/admin/users', userData)
+    console.log('Creating user with payload:', userData)
+    const token = getAuthToken()
+
+    const { data } = await proxyClient.post<User>('/api/admin/users', userData, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+    console.log('User created:', data)
     return data
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Create user error:', error)
     if (axios.isAxiosError(error)) {
-      throw {
-        message: error.response?.data?.message || 'Failed to create user',
-        status: error.response?.status,
-      } as ApiError
+      console.error('Response data:', error.response?.data)
+      console.error('Response status:', error.response?.status)
     }
     throw error
   }
@@ -180,9 +248,14 @@ export async function createUser(userData: {
  */
 export async function updateUserRole(userId: string, role: string): Promise<User> {
   try {
-    const { data } = await apiClient.patch<User>(`/admin/users/${userId}/role`, {
+    const token = getAuthToken()
+    const { data } = await proxyClient.patch<User>(`/api/admin/users/${userId}/role`, {
       userId,
       role,
+    }, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     })
     return data
   } catch (error) {
@@ -201,16 +274,50 @@ export async function updateUserRole(userId: string, role: string): Promise<User
  */
 export async function deleteUser(id: string): Promise<void> {
   try {
-    await apiClient.delete(`/admin/users/${id}`)
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw {
-        message: error.response?.data?.message || 'Failed to delete user',
-        status: error.response?.status,
-      } as ApiError
+    const token = getAuthToken()
+    await proxyClient.delete(`/api/admin/users?id=${id}`, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+    
+    // Clean up localStorage subject assignments
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`user_${id}_subjects`)
     }
+  } catch (error) {
+    console.error('Delete user error:', error)
     throw error
   }
+}
+
+/**
+ * Assign subjects to teacher
+ * Note: Backend doesn't support this endpoint, using localStorage
+ */
+export async function assignSubjectsToTeacher(userId: string, subjectIds: string[]): Promise<void> {
+  if (typeof window === 'undefined') {
+    throw new Error('Subject assignment only available in browser')
+  }
+  
+  // Store in localStorage keyed by user ID
+  localStorage.setItem(`user_${userId}_subjects`, JSON.stringify(subjectIds))
+}
+
+/**
+ * Get teacher's assigned subjects
+ * Note: Backend doesn't support this endpoint, using localStorage
+ */
+export async function getTeacherAssignedSubjects(teacherId: string): Promise<string[]> {
+  if (typeof window === 'undefined') {
+    return []
+  }
+  
+  const stored = localStorage.getItem(`user_${teacherId}_subjects`)
+  if (stored) {
+    return JSON.parse(stored)
+  }
+  return []
 }
 
 /**
@@ -308,4 +415,150 @@ function formatRoleName(role: string): string {
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+/**
+ * Get all subjects
+ */
+export async function getSubjects(): Promise<Subject[]> {
+  try {
+    // Backend doesn't have GET endpoint, use localStorage fallback
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('subjects')
+      if (stored) {
+        const subjects = JSON.parse(stored)
+        console.log('[getSubjects] Loaded from localStorage:', subjects.length, 'subjects')
+        return subjects
+      }
+    }
+    return []
+  } catch (error: any) {
+    console.error('[getSubjects] Failed to fetch subjects:', error)
+    return []
+  }
+}
+
+/**
+ * Get subject by ID
+ */
+export async function getSubjectById(id: string): Promise<Subject | null> {
+  try {
+    // Backend doesn't have GET endpoint, use localStorage fallback
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('subjects')
+      if (stored) {
+        const subjects = JSON.parse(stored)
+        return subjects.find((s: Subject) => s.id === id) || null
+      }
+    }
+    return null
+  } catch (error) {
+    console.error(`Failed to fetch subject ${id}:`, error)
+    return null
+  }
+}
+
+/**
+ * Create new subject
+ */
+export async function createSubject(subjectData: {
+  name: string
+  code: string
+  description?: string
+  iconType?: 'math' | 'science' | 'english' | 'philosophy' | 'history' | 'computer'
+}): Promise<Subject> {
+  try {
+    console.log('Creating subject with payload:', subjectData)
+    const token = getAuthToken()
+
+    const response = await proxyClient.post<Subject>('/api/admin/subjects', subjectData, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+    console.log('Subject created:', response.data)
+    
+    // Also store in localStorage
+    if (typeof window !== 'undefined') {
+      const stored = JSON.parse(localStorage.getItem('subjects') || '[]')
+      const newSubject = {
+        ...response.data,
+        id: response.data.id || `subject_${Date.now()}`,
+        status: 'active' as const,
+        createdAt: new Date().toISOString(),
+      }
+      localStorage.setItem('subjects', JSON.stringify([...stored, newSubject]))
+    }
+    
+    return response.data
+  } catch (error: any) {
+    console.error('Create subject error:', error)
+    
+    // Fallback: store in localStorage
+    if (typeof window !== 'undefined') {
+      const newSubject: Subject = {
+        id: `subject_${Date.now()}`,
+        name: subjectData.name,
+        code: subjectData.code,
+        description: subjectData.description || '',
+        iconType: subjectData.iconType || 'science',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+      }
+      const stored = JSON.parse(localStorage.getItem('subjects') || '[]')
+      localStorage.setItem('subjects', JSON.stringify([...stored, newSubject]))
+      return newSubject
+    }
+    
+    throw error
+  }
+}
+
+/**
+ * Update subject (localStorage only - backend doesn't support PUT)
+ */
+export async function updateSubject(
+  subjectId: string,
+  subjectData: {
+    name?: string
+    code?: string
+    description?: string
+    iconType?: 'math' | 'science' | 'english' | 'philosophy' | 'history' | 'computer'
+    status?: 'active' | 'inactive'
+  }
+): Promise<Subject> {
+  if (typeof window === 'undefined') {
+    throw new Error('Update only available in browser')
+  }
+  
+  const stored = JSON.parse(localStorage.getItem('subjects') || '[]')
+  const index = stored.findIndex((s: Subject) => s.id === subjectId)
+  
+  if (index === -1) {
+    throw new Error('Subject not found')
+  }
+  
+  const updated = {
+    ...stored[index],
+    ...subjectData,
+    updatedAt: new Date().toISOString(),
+  }
+  
+  stored[index] = updated
+  localStorage.setItem('subjects', JSON.stringify(stored))
+  
+  return updated
+}
+
+/**
+ * Delete subject (localStorage only - backend doesn't support DELETE)
+ */
+export async function deleteSubject(id: string): Promise<void> {
+  if (typeof window === 'undefined') {
+    throw new Error('Delete only available in browser')
+  }
+  
+  const stored = JSON.parse(localStorage.getItem('subjects') || '[]')
+  const filtered = stored.filter((s: Subject) => s.id !== id)
+  localStorage.setItem('subjects', JSON.stringify(filtered))
 }

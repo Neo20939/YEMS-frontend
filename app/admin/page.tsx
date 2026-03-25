@@ -40,18 +40,32 @@ export default function AdminDashboardPage() {
         <StatsGrid />
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link
-            href="/admin/roles"
+            href="/admin/settings"
             className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex items-center gap-4">
-              <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">shield_person</span>
+              <div className="size-12 rounded-xl bg-violet-100 flex items-center justify-center text-violet-700 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">settings</span>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100">Roles & Permissions</h3>
-                <p className="text-sm text-slate-500">Manage access controls</p>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">System Settings</h3>
+                <p className="text-sm text-slate-500">Configure system</p>
+              </div>
+            </div>
+          </Link>
+          <Link
+            href="/admin/subjects"
+            className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">menu_book</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">Subject Management</h3>
+                <p className="text-sm text-slate-500">Create and manage subjects</p>
               </div>
             </div>
           </Link>
@@ -80,6 +94,20 @@ export default function AdminDashboardPage() {
               <div>
                 <h3 className="font-bold text-slate-900 dark:text-slate-100">Audit Logs</h3>
                 <p className="text-sm text-slate-500">View system activity</p>
+              </div>
+            </div>
+          </Link>
+          <Link
+            href="/admin/roles"
+            className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">shield_person</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">Roles & Permissions</h3>
+                <p className="text-sm text-slate-500">Manage access controls</p>
               </div>
             </div>
           </Link>

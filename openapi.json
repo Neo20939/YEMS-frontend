@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YEMS Tools</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg2: #1e293b;
+      --card: #f8fafc;
+      --text: #0f172a;
+      --accent: #0ea5e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: linear-gradient(130deg, var(--bg), var(--bg2));
+      color: #fff;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { margin-bottom: 6px; }
+    p { opacity: 0.85; }
+    .grid {
+      margin-top: 18px;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .card {
+      display: block;
+      text-decoration: none;
+      background: var(--card);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      border: 1px solid #dbe3ee;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1.1rem; }
+    .card p { margin: 0; color: #334155; }
+    .badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>YEMS Runtime Pages</h1>
+    <p>Split by concern. Public status is separate from authenticated technician tools.</p>
+
+    <section class="grid">
+      <a class="card" href="/status">
+        <h2>Public Status</h2>
+        <p>Read-only latency overview (p95, p99, total requests).</p>
+        <span class="badge">Public</span>
+      </a>
+
+      <a class="card" href="/auth">
+        <h2>Auth Test</h2>
+        <p>Login and basic authenticated route checks.</p>
+      </a>
+
+      <a class="card" href="/technician">
+        <h2>Technician Tools</h2>
+        <p>Deep logs and RBAC policy inspection (token required).</p>
+        <span class="badge">Technician / Platform Admin</span>
+      </a>
+
+      <a class="card" href="/test">
+        <h2>Test Section</h2>
+        <p>Seeded RBAC accounts + embedded Grafana dashboard.</p>
+        <span class="badge">QA / Demo</span>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

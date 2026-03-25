@@ -158,6 +158,39 @@ export async function getExams(type?: 'objective' | 'theory'): Promise<Exam[]> {
 }
 
 /**
+ * Create a new exam
+ */
+export async function createExam(examData: {
+  title: string
+  description: string
+  type: 'objective' | 'theory' | 'mixed'
+  duration: number
+  totalMarks: number
+  subject?: string
+  iconType?: 'math' | 'science' | 'english' | 'philosophy' | 'history' | 'computer'
+  instructions?: string
+  passingScore?: number
+}): Promise<Exam> {
+  try {
+    const token = getAuthToken()
+    if (!token) {
+      throw new Error('Authentication required')
+    }
+
+    const { data } = await apiClient.post<Exam>('/exams', examData)
+    return data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw {
+        message: error.response?.data?.message || 'Failed to create exam',
+        status: error.response?.status,
+      } as ApiError
+    }
+    throw error
+  }
+}
+
+/**
  * Get student-specific exams
  */
 export async function getStudentExams(): Promise<Exam[]> {
