@@ -22,7 +22,33 @@ const backendClient = axios.create({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    // Check content type and handle empty body
+    const contentType = request.headers.get('content-type') || ''
+    
+    let body
+    if (!contentType.includes('application/json')) {
+      return NextResponse.json(
+        { message: 'Invalid request content type', code: 'INVALID_CONTENT_TYPE' },
+        { status: 415 }
+      )
+    }
+    
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid JSON body', code: 'INVALID_JSON' },
+        { status: 400 }
+      )
+    }
+    
+    // Validate required fields
+    if (!body?.email || !body?.password) {
+      return NextResponse.json(
+        { message: 'Email and password are required', code: 'MISSING_CREDENTIALS' },
+        { status: 400 }
+      )
+    }
 
     const response = await backendClient.post('api/auth/login', body, {
       withCredentials: true,
