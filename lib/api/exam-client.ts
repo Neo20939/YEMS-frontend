@@ -4,9 +4,10 @@
  * Handles all exam-related API calls for objective and theory examinations.
  */
 
-import axios from 'axios'
+import { axios } from '@/lib/axios-shim'
 import { getAuthToken } from './auth-config'
 import { useUser } from '@/contexts/UserContext'
+import type { ExamCard } from '@/components/exam'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'
 
@@ -22,7 +23,7 @@ const apiClient = axios.create({
 })
 
 // Add auth token to requests
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use((config: any) => {
   const token = getAuthToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -32,8 +33,8 @@ apiClient.interceptors.request.use((config) => {
 
 // Handle response errors
 apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response: any) => response,
+  (error: any) => {
     if (error.response?.status === 401) {
       // Token expired, redirect to login
       if (typeof window !== 'undefined') {
@@ -144,9 +145,9 @@ export async function getExams(type?: 'objective' | 'theory'): Promise<Exam[]> {
 
     let url: string
     if (type) {
-      url = `/exams/type/${type}`
+      url = `exams/type/${type}`
     } else {
-      url = '/exams/'
+      url = 'exams/'
     }
 
     const { data } = await apiClient.get<Exam[]>(url)
@@ -177,7 +178,7 @@ export async function createExam(examData: {
       throw new Error('Authentication required')
     }
 
-    const { data } = await apiClient.post<Exam>('/exams', examData)
+    const { data } = await apiClient.post<Exam>('exams', examData)
     return data
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -195,7 +196,7 @@ export async function createExam(examData: {
  */
 export async function getStudentExams(): Promise<Exam[]> {
   try {
-    const { data } = await apiClient.get<Exam[]>('/student/exams')
+    const { data } = await apiClient.get<Exam[]>('student/exams')
     return data
   } catch (error) {
     console.error('Failed to fetch student exams:', error)
@@ -208,7 +209,7 @@ export async function getStudentExams(): Promise<Exam[]> {
  */
 export async function getTeacherExams(): Promise<Exam[]> {
   try {
-    const { data } = await apiClient.get<Exam[]>('/teacher/exams')
+    const { data } = await apiClient.get<Exam[]>('teacher/exams')
     return data
   } catch (error) {
     console.error('Failed to fetch teacher exams:', error)
@@ -221,7 +222,7 @@ export async function getTeacherExams(): Promise<Exam[]> {
  */
 export async function getExamById(examId: string): Promise<Exam | null> {
   try {
-    const { data } = await apiClient.get<Exam>(`/exams/${examId}`)
+    const { data } = await apiClient.get<Exam>(`exams/${examId}`)
     return data
   } catch (error) {
     console.error(`Failed to fetch exam ${examId}:`, error)
@@ -259,7 +260,7 @@ export async function getQuestionById(
 ): Promise<ExamQuestion | null> {
   try {
     const { data } = await apiClient.get<ExamQuestion>(
-      `/exams/${examId}/questions/${questionId}`
+      `exams/${examId}/questions/${questionId}`
     )
     return data
   } catch (error) {
@@ -276,7 +277,7 @@ export async function startExam(
   studentId: string
 ): Promise<StartExamResponse> {
   try {
-    const { data } = await apiClient.post<StartExamResponse>('/exams/start', {
+    const { data } = await apiClient.post<StartExamResponse>('exams/start', {
       examId,
       studentId,
     })
@@ -318,7 +319,7 @@ export async function saveAnswer(
     }
 
     const { data } = await apiClient.post<SavedAnswer>(
-      `/exams/${examId}/answers`,
+      `exams/${examId}/answers`,
       {
         questionId: answerData.questionId,
         answerText: answerData.answerText,
@@ -342,7 +343,7 @@ export async function submitExam(
   answers: SavedAnswer[]
 ): Promise<SubmitExamResponse> {
   try {
-    const { data } = await apiClient.post<SubmitExamResponse>('/exams/submit', {
+    const { data } = await apiClient.post<SubmitExamResponse>('exams/submit', {
       examId,
       studentId,
       answers,
@@ -368,7 +369,7 @@ export async function getExamProgress(
 ): Promise<ExamProgress | null> {
   try {
     const { data } = await apiClient.get<ExamProgress>(
-      `/exams/${examId}/progress/${studentId}`
+      `exams/${examId}/progress/${studentId}`
     )
     return data
   } catch (error) {
@@ -380,7 +381,13 @@ export async function getExamProgress(
 /**
  * Helper: Convert API Exam to UI ExamCard format
  */
-export function convertExamToCard(exam: Exam) {
+export function convertExamToCard(exam: Exam): ExamCard {
+  const statusMap: Record<string, ExamCard['status']> = {
+    'not-started': 'not-started',
+    'in-progress': 'new',
+    'completed': 'locked',
+    'upcoming': 'upcoming',
+  }
   return {
     id: exam.id,
     title: exam.title,
@@ -388,9 +395,7 @@ export function convertExamToCard(exam: Exam) {
     duration: exam.duration,
     questions: exam.totalQuestions,
     questionType: exam.type === 'objective' ? 'MCQs' : 'Theory',
-    status: exam.status === 'not-started' ? 'not-started' :
-            exam.status === 'in-progress' ? 'new' :
-            exam.status === 'completed' ? 'locked' : 'upcoming',
+    status: statusMap[exam.status] || 'upcoming',
     iconType: exam.iconType || 'science',
     route: exam.type === 'objective' ? `/objective-exam?id=${exam.id}` : `/theory-exam?id=${exam.id}`,
   }
@@ -417,7 +422,7 @@ export async function createQuestion(
 ): Promise<ExamQuestion> {
   try {
     const { data } = await apiClient.post<ExamQuestion>(
-      `/exams/${examId}/questions`,
+      `exams/${examId}/questions`,
       questionData
     )
     return data
@@ -453,7 +458,7 @@ export async function updateQuestion(
 ): Promise<ExamQuestion> {
   try {
     const { data } = await apiClient.put<ExamQuestion>(
-      `/exams/${examId}/questions/${questionId}`,
+      `exams/${examId}/questions/${questionId}`,
       questionData
     )
     return data
@@ -476,7 +481,7 @@ export async function deleteQuestion(
   questionId: string
 ): Promise<void> {
   try {
-    await apiClient.delete(`/exams/${examId}/questions/${questionId}`)
+    await apiClient.delete(`exams/${examId}/questions/${questionId}`)
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw {

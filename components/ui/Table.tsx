@@ -67,7 +67,7 @@ export function Table<T>({
     if (typeof rowKey === "function") {
       return rowKey(item);
     }
-    return item[rowKey] as string | number;
+    return item[rowKey as keyof T] as string | number;
   };
 
   const allSelected = selectedRows && data.length > 0 && data.every((item) => selectedRows.has(getRowIdentifier(item)));

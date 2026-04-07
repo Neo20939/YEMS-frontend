@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-export type QuestionStatus = "answered" | "not-answered" | "unvisited" | "current"
+export type QuestionStatus = "answered" | "not-answered" | "unvisited" | "visited" | "flagged" | "current"
 
 export interface QuestionPaletteItem {
   number: number
@@ -37,6 +37,8 @@ const statusClasses: Record<QuestionStatus, string> = {
   answered: "bg-emerald-500/90 text-white hover:bg-emerald-600/90",
   "not-answered": "bg-orange-500/90 text-white hover:bg-orange-600/90",
   unvisited: "bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400 hover:bg-slate-300/70 dark:hover:bg-slate-600/70",
+  visited: "bg-yellow-500/70 text-white hover:bg-yellow-600/70",
+  flagged: "bg-red-500/90 text-white hover:bg-red-600/90 border-2 border-red-400",
   current: "border-2 border-primary/80 text-primary/90 font-bold bg-white/90 dark:bg-slate-900/90 hover:bg-primary/5",
 }
 

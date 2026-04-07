@@ -36,7 +36,7 @@ export default function UserModal({
   })
 
   useEffect(() => {
-    const initialRole = lockedRole || (user ? user.role.toLowerCase().replace(/\s+/g, "_") : "student")
+    const initialRole = lockedRole || (user ? String(user.role).toLowerCase().replace(/\s+/g, "_") : "student")
     if (user) {
       setFormData({
         name: user.name,
@@ -44,7 +44,7 @@ export default function UserModal({
         role: initialRole,
         status: user.status,
         password: "",
-        avatar: user.avatar || "",
+        avatar: "",
       })
     } else {
       setFormData({

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { TheoryExamLayout } from "@/components/exam"
 import type { ExamSection, QuestionNavigatorItem, TheoryQuestion } from "@/components/exam"
@@ -8,7 +9,7 @@ import { ExamProvider, useExam, formatTimeRemaining } from "@/contexts/ExamConte
 import { useUser } from "@/contexts/UserContext"
 import { saveAnswer as saveAnswerApi } from "@/lib/api/exam-client"
 
-function TheoryExamContent() {
+function TheoryExamInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const examId = searchParams.get('id')
@@ -300,6 +301,21 @@ function TheoryExamContent() {
       onHelp={() => alert("Help requested")}
       onReportIssue={() => alert("Issue reported")}
     />
+  )
+}
+
+function TheoryExamContent() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading exam...</p>
+        </div>
+      </div>
+    }>
+      <TheoryExamInner />
+    </Suspense>
   )
 }
 

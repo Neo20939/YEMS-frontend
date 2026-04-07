@@ -29,6 +29,8 @@ export interface ClassFilters {
   status?: ClassStatus;
   academic_year?: string;
   form_teacher_id?: string;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }
 
 export interface ClassPagination {
@@ -168,4 +170,16 @@ export interface ClassActivity {
   changed_by_name: string;
   details: string;
   created_at: string;
+}
+
+// Academic Year
+export interface AcademicYear {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isCurrent: boolean;
+  schoolId?: string;
+  createdAt: string;
+  updatedAt: string;
 }

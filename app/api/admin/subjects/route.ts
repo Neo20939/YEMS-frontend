@@ -2,7 +2,7 @@
  * Admin Subjects API Proxy
  *
  * Proxies subject operations to the backend API
- * Backend only supports: POST /api/admin/subjects (create)
+ * Backend subjects are at /api/academic/subjects
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -21,20 +21,32 @@ export async function OPTIONS() {
   })
 }
 
-// GET /api/admin/subjects - List subjects (from localStorage fallback)
+// GET /api/admin/subjects - List subjects (proxied to academic)
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const subjectId = searchParams.get('id')
+    const token = request.headers.get('authorization')
 
-    // Backend doesn't have GET endpoint, return empty array
-    // Subjects are stored in localStorage as fallback
-    if (typeof request.headers.get('x-storage') !== 'undefined') {
-      return NextResponse.json([])
+    const response = await fetch(`${API_BASE_URL}/api/academic/subjects`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        ...(token ? { Authorization: token.replace('Bearer ', '') } : {}),
+      },
+    })
+
+    const contentType = response.headers.get('content-type')
+    const isJson = contentType?.includes('application/json')
+
+    if (!isJson) {
+      const text = await response.text()
+      return NextResponse.json(
+        { error: 'Backend returned invalid response format', status: response.status },
+        { status: response.status }
+      )
     }
 
-    console.log('[Subjects API] Backend does not support GET, returning empty list')
-    return NextResponse.json([])
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error: any) {
     console.error('[Subjects API] Proxy error:', error)
     return NextResponse.json(
@@ -44,16 +56,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/subjects - Create subject
+// POST /api/admin/subjects - Create subject (proxied to academic)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const token = request.headers.get('authorization')
 
-    console.log('[Subjects API] Creating subject...')
-    console.log('[Subjects API] Body:', body)
-
-    const response = await fetch(`${API_BASE_URL}/api/admin/subjects`, {
+    const response = await fetch(`${API_BASE_URL}/api/academic/subjects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,15 +72,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     })
 
-    console.log('[Subjects API] Backend response status:', response.status)
-
-    // Check if response is JSON
     const contentType = response.headers.get('content-type')
     const isJson = contentType?.includes('application/json')
 
     if (!isJson) {
       const text = await response.text()
-      console.error('[Subjects API] Backend returned non-JSON response:', text.substring(0, 500))
       return NextResponse.json(
         { error: 'Backend returned invalid response format', status: response.status },
         { status: response.status }
@@ -79,10 +84,8 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('[Subjects API] Backend response data:', data)
 
     if (!response.ok) {
-      console.error('[Subjects API] Backend error:', response.status, data)
       return NextResponse.json(data, { status: response.status })
     }
 

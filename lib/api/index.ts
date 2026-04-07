@@ -3,9 +3,9 @@
  */
 
 export * from "./types"
-export * from "./client"
-export * from "./auth-config"
-export * from "./auth-client"
+export { AUTH_CONFIG } from "./auth-config"
+export { login, logout } from "./auth-client"
 export * from "./notes-client"
 export * from "./monitoring-client"
 export * from "./question-client"
+export * from "./class-teacher-client"

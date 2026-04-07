@@ -23,12 +23,13 @@ export default function TechnicianDashboardPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = React.useState<'overview' | 'logs' | 'rbac'>('overview')
   const [rbacPolicies, setRbacPolicies] = React.useState<RBACPolicy[]>([])
-  const [isLoading, setIsLoading] = React.useState(true)
+  const [isLoadingRbac, setIsLoadingRbac] = React.useState(false)
   const [selectedPolicy, setSelectedPolicy] = React.useState<RBACPolicy | null>(null)
 
   React.useEffect(() => {
     if (!userLoading && user) {
-      const userRole = user.role.toLowerCase()
+      // Handle role as either string or number
+      const userRole = String(user.role).toLowerCase()
       if (userRole !== 'technician' && userRole !== 'platform_admin') {
         router.push('/dashboard')
       }
@@ -40,20 +41,18 @@ export default function TechnicianDashboardPage() {
   }, [])
 
   async function loadRbacPolicies() {
-    setIsLoading(true)
+    setIsLoadingRbac(true)
     try {
       const result = await getRbacPolicies()
       if (result.success && result.data) {
         setRbacPolicies(result.data)
       } else {
-        console.error('Failed to load RBAC policies:', result.error)
-        setRbacPolicies([])
+        console.warn('Failed to load RBAC policies:', result.error)
       }
     } catch (error) {
-      console.error('Failed to load RBAC policies:', error)
-      setRbacPolicies([])
+      console.warn('Failed to load RBAC policies:', error)
     } finally {
-      setIsLoading(false)
+      setIsLoadingRbac(false)
     }
   }
 
@@ -71,7 +70,7 @@ export default function TechnicianDashboardPage() {
     { id: 'rbac', label: 'RBAC Policies', icon: 'security' },
   ]
 
-  if (userLoading || isLoading) {
+  if (userLoading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">

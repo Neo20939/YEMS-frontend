@@ -14,10 +14,11 @@ import {
   getExamProgress,
 } from "@/lib/api/exam-client"
 import { useUser } from "./UserContext"
+import type { QuestionStatus as QuestionStatusType } from "@/components/exam/question-palette"
 
-interface QuestionStatus {
+interface QuestionStatusLocal {
   questionNumber: number
-  status: "unvisited" | "visited" | "answered" | "not-answered" | "flagged"
+  status: QuestionStatusType
 }
 
 interface ExamState {
@@ -25,7 +26,7 @@ interface ExamState {
   questions: ExamQuestion[]
   currentQuestionIndex: number
   answers: Map<string, SavedAnswer>
-  questionStatuses: QuestionStatus[]
+  questionStatuses: QuestionStatusLocal[]
   isExamStarted: boolean
   isSubmitting: boolean
   timeRemaining: number // in seconds
@@ -151,7 +152,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       const questions = await getExamQuestions(examId)
 
       // Initialize question statuses
-      const statuses: QuestionStatus[] = questions.map((q, index) => ({
+      const statuses: QuestionStatusLocal[] = questions.map((q, index) => ({
         questionNumber: index + 1,
         status: "unvisited",
       }))

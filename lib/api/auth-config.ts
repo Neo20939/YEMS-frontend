@@ -1,29 +1,41 @@
 /**
  * Authentication API Configuration
- * 
+ *
  * Centralized configuration for backend API authentication.
  * Update these values to change the backend connection.
  */
 
+// CORS placeholder for future use
+// yeshuacorsissue: {
+//   allowedOrigins: ['http://localhost:3000', 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'],
+//   enabled: false,
+// }
+
 export const AUTH_CONFIG = {
   // Base URL for the backend API
-  // Change this to your production URL when deploying
+  // Backend runs on another PC, tunneled via ngrok
+  // Next.js API routes proxy requests to this backend
+  // Change to production URL when deploying
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev',
-  
-  // API Endpoints
+
+  // API Endpoints (relative to baseURL when calling directly, or /api when using Next.js proxy)
+  // When using Next.js proxy (baseURL: '/api'), these should NOT have /api prefix
+  // When calling backend directly (baseURL: ngrok URL), these SHOULD have /api prefix
   endpoints: {
-    login: '/api/auth/login',
-    logout: '/api/auth/logout',
-    refresh: '/api/auth/refresh',
-    me: '/api/auth/me',
+    login: 'auth/login',
+    logout: 'auth/logout',
+    me: 'auth/me',
   },
-  
+
   // Request timeout in milliseconds
   timeout: 30000,
-  
+
   // Number of retry attempts
   retries: 3,
-  
+
+  // Session cookie name (YEMS uses session-based auth, not JWT)
+  sessionCookieName: 'yems_session',
+
   // Token storage key
   tokenStorageKey: 'auth_token',
   refreshTokenStorageKey: 'refresh_token',
@@ -42,6 +54,9 @@ export type LoginResponse = {
     name: string
     role: string
     avatar?: string
+    firstName?: string
+    lastName?: string
+    roles?: number[] | Array<{ id: number; name: string }>
   }
   accessToken: string
   refreshToken?: string
@@ -82,15 +97,31 @@ export function createHeaders(token?: string): HeadersInit {
 /**
  * Save auth token to storage
  */
-export function saveAuthToken(accessToken: string, refreshToken?: string, user?: { id: string; email: string; name: string; role: string; avatar?: string }): void {
+export function saveAuthToken(accessToken: string, refreshToken?: string, user?: { id: string; email: string; name: string; role: string; avatar?: string; roles?: unknown[] }): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(AUTH_CONFIG.tokenStorageKey, accessToken)
     if (refreshToken) {
       localStorage.setItem(AUTH_CONFIG.refreshTokenStorageKey, refreshToken)
     }
     if (user) {
-      localStorage.setItem(AUTH_CONFIG.userStorageKey, JSON.stringify(user))
+      const userForStorage = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar,
+        roles: user.roles,
+      }
+      localStorage.setItem(AUTH_CONFIG.userStorageKey, JSON.stringify(userForStorage))
+      // Also set cookies for middleware to read
+      document.cookie = `auth_user=${encodeURIComponent(JSON.stringify(userForStorage))}; path=/; max-age=86400; SameSite=Lax`
     }
+    // Set auth token cookie for middleware
+    document.cookie = `auth_token=${accessToken}; path=/; max-age=86400; SameSite=Lax`
+    
+    // Force cookie to be sent immediately by setting it synchronously
+    // Also set a version cookie to trigger immediate send
+    document.cookie = `auth_version=1; path=/; max-age=86400; SameSite=Lax`
   }
 }
 
@@ -112,7 +143,27 @@ export function getStoredUser(): { id: string; email: string; name: string; role
     const userStr = localStorage.getItem(AUTH_CONFIG.userStorageKey)
     if (userStr) {
       try {
-        return JSON.parse(userStr)
+        const user = JSON.parse(userStr)
+        // Map role ID to role name if needed
+        const roleIdMap: Record<string, string> = {
+          '1': 'admin',
+          '2': 'technician',
+          '3': 'teacher',
+          '4': 'class_teacher',
+          '5': 'finance',
+          '6': 'admin',
+          '7': 'student',
+          '8': 'student',
+          '9': 'student',
+          '10': 'student',
+          '11': 'student',
+          '12': 'student',
+        }
+        // If role is a number-like string, map it
+        if (roleIdMap[user.role]) {
+          user.role = roleIdMap[user.role]
+        }
+        return user
       } catch {
         return null
       }
@@ -129,6 +180,9 @@ export function clearAuthToken(): void {
     localStorage.removeItem(AUTH_CONFIG.tokenStorageKey)
     localStorage.removeItem(AUTH_CONFIG.refreshTokenStorageKey)
     localStorage.removeItem(AUTH_CONFIG.userStorageKey)
+    // Clear cookies
+    document.cookie = 'auth_token=; path=/; max-age=0'
+    document.cookie = 'auth_user=; path=/; max-age=0'
   }
 }
 
@@ -137,29 +191,43 @@ export function clearAuthToken(): void {
  */
 export function getRedirectPathByRole(role: string): string {
   const normalizedRole = role.toLowerCase().trim()
-  
+
   // Admin roles
-  if (normalizedRole === 'admin' || 
-      normalizedRole === 'administrator' || 
+  if (normalizedRole === 'admin' ||
+      normalizedRole === 'administrator' ||
       normalizedRole === 'platform_admin') {
     return '/admin'
   }
-  
-  // Teacher roles
-  if (normalizedRole === 'teacher' || 
-      normalizedRole === 'professor' || 
-      normalizedRole === 'instructor') {
-    return '/teachers/dashboard'
-  }
-  
-  // Student role
-  if (normalizedRole === 'student') {
-    return '/dashboard'
-  }
-  
+
   // Technician role
   if (normalizedRole === 'technician') {
     return '/technician/dashboard'
+  }
+
+  // Teacher roles (subject teachers)
+  if (normalizedRole === 'teacher' ||
+      normalizedRole === 'professor' ||
+      normalizedRole === 'instructor' ||
+      normalizedRole === 'subject_teacher') {
+    return '/teachers/dashboard'
+  }
+
+  // Class teacher / Form teacher role
+  if (normalizedRole === 'class_teacher' ||
+      normalizedRole === 'form_teacher') {
+    return '/class-teachers'
+  }
+
+  // Finance role
+  if (normalizedRole === 'finance' ||
+      normalizedRole === 'finance_staff') {
+    return '/finance/dashboard'
+  }
+
+  // Student role (all student variants go to student dashboard)
+  if (normalizedRole === 'student' ||
+      normalizedRole.startsWith('student_')) {
+    return '/dashboard'
   }
 
   // Default to student dashboard for unknown roles

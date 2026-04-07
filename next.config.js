@@ -8,6 +8,11 @@ const nextConfig = {
       },
     ],
   },
+  // CORS placeholder for future use
+  // yeshuacorsissue: {
+  //   allowedOrigins: ['https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'],
+  //   enabled: false,
+  // },
 }
 
 module.exports = nextConfig

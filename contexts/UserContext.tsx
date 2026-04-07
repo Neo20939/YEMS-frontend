@@ -43,7 +43,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     // Fallback to API call if no stored user
     try {
-      const userData = await getCurrentUser(token)
+      const userData = await getCurrentUser()
       setUser(userData)
     } catch (error) {
       console.error("Failed to load user:", error)
@@ -58,8 +58,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [loadUser])
 
   const logout = async () => {
-    const token = getAuthToken()
-    await apiLogout(token)
+    await apiLogout()
     clearAuthToken()
     setUser(null)
   }

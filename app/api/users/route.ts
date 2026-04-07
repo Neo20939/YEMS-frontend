@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     if (role) {
       filteredUsers = filteredUsers.filter((u) =>
-        u.role.toLowerCase().includes(role.toLowerCase())
+        String(u.role).toLowerCase().includes(role.toLowerCase())
       )
     }
 

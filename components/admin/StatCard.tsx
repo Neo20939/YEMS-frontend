@@ -13,7 +13,7 @@ interface StatCardProps {
 }
 
 export default function StatCard({ title, value, subtext, icon, color = "primary" }: StatCardProps) {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     primary: "bg-primary/10 text-primary",
     amber: "bg-amber-100 text-amber-700",
     rose: "bg-rose-100 text-rose-700",
@@ -21,29 +21,19 @@ export default function StatCard({ title, value, subtext, icon, color = "primary
     blue: "bg-blue-100 text-blue-700",
   }
 
+  const colorClass = colorClasses[color] || colorClasses.primary
+
   return (
-    <div className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 flex items-center gap-5 shadow-sm">
-      <div className={`size-14 rounded-2xl flex items-center justify-center ${colorClasses[color as keyof typeof colorClasses]}`}>
-        <span className="material-symbols-outlined text-3xl">{icon}</span>
-      </div>
-      <div>
-        <p className="text-slate-500 text-sm font-medium">{title}</p>
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value.toLocaleString()}</h3>
-        {subtext && (
-          <p className={`text-xs font-bold mt-1 flex items-center gap-1 ${
-            subtext.includes("+") ? "text-emerald-600" :
-            subtext.includes("!") ? "text-rose-600" :
-            "text-slate-400"
-          }`}>
-            {subtext.includes("trending") && (
-              <span className="material-symbols-outlined text-xs">trending_up</span>
-            )}
-            {subtext.includes("priority") && (
-              <span className="material-symbols-outlined text-xs">priority_high</span>
-            )}
-            {subtext}
-          </p>
-        )}
+    <div className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800">
+      <div className="flex items-center gap-5">
+        <div className={`size-14 rounded-2xl flex items-center justify-center ${colorClass}`}>
+          <span className="material-symbols-outlined text-2xl">{icon}</span>
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-stone-600 dark:text-stone-400">{title}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">{value}</p>
+          {subtext && <p className="text-xs text-stone-500 mt-1">{subtext}</p>}
+        </div>
       </div>
     </div>
   )
@@ -52,14 +42,18 @@ export default function StatCard({ title, value, subtext, icon, color = "primary
 export function StatsGrid() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadStats() {
       try {
+        console.log('[StatsGrid] Calling getDashboardStats...')
         const data = await getDashboardStats()
+        console.log('[StatsGrid] Got data:', JSON.stringify(data))
         setStats(data)
-      } catch (error) {
-        console.error('Failed to load stats:', error)
+      } catch (err) {
+        console.error('[StatsGrid] Error:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load stats')
       } finally {
         setIsLoading(false)
       }
@@ -69,8 +63,8 @@ export function StatsGrid() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white dark:bg-stone-900 p-6 rounded-2xl border border-stone-200 dark:border-stone-800 animate-pulse">
             <div className="flex items-center gap-5">
               <div className="size-14 rounded-2xl bg-stone-200 dark:bg-stone-700"></div>
@@ -81,6 +75,14 @@ export function StatsGrid() {
             </div>
           </div>
         ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+        Error loading stats: {error}
       </div>
     )
   }
@@ -101,6 +103,13 @@ export function StatsGrid() {
       color: "blue" as const,
     },
     {
+      title: "Total Subjects",
+      value: stats?.totalSubjects || 0,
+      subtext: "Active subjects",
+      icon: "menu_book",
+      color: "sage" as const,
+    },
+    {
       title: "Total Students",
       value: stats?.totalStudents || 0,
       subtext: "Active learners",
@@ -110,7 +119,7 @@ export function StatsGrid() {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statCards.map((stat) => (
         <StatCard key={stat.title} {...stat} />
       ))}

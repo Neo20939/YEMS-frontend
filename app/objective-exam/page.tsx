@@ -1,13 +1,14 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ObjectiveExamLayout } from "@/components/exam"
 import type { QuestionOption, QuestionPaletteItem } from "@/components/exam"
 import { ExamProvider, useExam, formatTimeRemaining } from "@/contexts/ExamContext"
 import { useUser } from "@/contexts/UserContext"
 
-function ObjectiveExamContent() {
+function ObjectiveExamInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const examId = searchParams.get('id')
@@ -223,6 +224,21 @@ function ObjectiveExamContent() {
       onPaletteQuestionClick={handlePaletteClick}
       onSubmitExam={handleSubmitExam}
     />
+  )
+}
+
+function ObjectiveExamContent() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading exam...</p>
+        </div>
+      </div>
+    }>
+      <ObjectiveExamInner />
+    </Suspense>
   )
 }
 

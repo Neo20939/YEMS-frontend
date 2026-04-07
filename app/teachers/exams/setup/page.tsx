@@ -287,7 +287,7 @@ function CreateQuestionForm({
   }
 
   const handleRemoveOption = (index: number) => {
-    setOptions(options.filter((_, i) => i !== index))
+    setOptions(options.filter((_: Option, i: number) => i !== index))
   }
 
   const handleOptionTextChange = (index: number, text: string) => {
@@ -297,7 +297,7 @@ function CreateQuestionForm({
   }
 
   const handleCorrectOptionChange = (index: number) => {
-    const newOptions = options.map((opt, i) => ({
+    const newOptions = options.map((opt: Option, i: number) => ({
       ...opt,
       isCorrect: i === index,
     }))
@@ -378,7 +378,7 @@ function CreateQuestionForm({
           </div>
 
           <div className="space-y-3">
-            {options.map((option, index) => (
+            {options.map((option: Option, index: number) => (
               <div key={option.id} className="flex items-center gap-3">
                 <input
                   type="radio"

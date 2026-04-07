@@ -2,10 +2,10 @@
  * Monitoring API Client
  *
  * Handles all system monitoring and diagnostics API calls for technician role.
- * Includes metrics, health checks, diagnostics, and log viewing.
+ * Includes metrics, health checks, diagnostics, service management, and incident management.
  */
 
-import axios from 'axios'
+import { axios } from '@/lib/axios-shim'
 import {
   ApiResponse,
   SystemMetrics,
@@ -18,18 +18,21 @@ import {
 
 /**
  * Configuration for the Monitoring API
- * 
+ *
  * Uses local Next.js API routes which proxy requests to the backend
  */
 const MONITORING_API_CONFIG = {
   baseUrl: '', // Empty for local API routes
   timeout: 30000,
   endpoints: {
-    metrics: '/api/technician/metrics',
-    health: '/api/technician/health',
-    diagnostics: '/api/technician/diagnostics',
-    logs: '/api/technician/logs',
-    rbacPolicies: '/api/technician/rbac-policies',
+    metrics: 'api/technician/metrics',
+    health: 'api/technician/health',
+    diagnostics: 'api/technician/diagnostics',
+    logs: 'api/technician/logs',
+    rbacPolicies: 'api/technician/rbac-policies',
+    servicesHealth: 'api/technician/services/health',
+    serviceRestart: 'api/technician/services/restart',
+    incidents: 'api/technician/incidents',
   },
 }
 

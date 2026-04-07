@@ -6,6 +6,25 @@ import { User, Lock, Eye, EyeOff, ArrowLeft, BookOpen, FlaskConical, Trophy, Pal
 import { login, getRedirectPathByRole } from "@/lib/api/auth-client"
 import type { ApiError } from "@/lib/api/auth-config"
 
+// Role ID mapping (defined at module level for reuse)
+// Backend role IDs from YEMS:
+// 1: admin, 2: technician, 3: subject_teacher, 4: class_teacher
+// 5: finance_staff, 6: reserved, 7-12: various student grades
+const roleIdMap: Record<number, string> = {
+  1: 'admin',
+  2: 'technician',
+  3: 'teacher',
+  4: 'class_teacher',
+  5: 'finance',
+  6: 'admin',
+  7: 'student',
+  8: 'student',
+  9: 'student',
+  10: 'student',
+  11: 'student',
+  12: 'student',
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -31,13 +50,42 @@ export default function LoginPage() {
       console.log("=== LOGIN SUCCESS ===")
       console.log("Full response:", JSON.stringify(response, null, 2))
       console.log("User object:", response.user)
+      console.log("User roles array:", response.user.roles)
       
-      // Handle different possible role field names
-      const userRole = (response.user as any).role || 
-                       (response.user as any).userType || 
-                       (response.user as any).role_name || 
-                       (response.user as any).user_role ||
-                       'student'
+      // Handle different possible role field names from backend
+      const userData = response.user
+      let userRole = 'student'
+
+      // Backend returns roles as array: [{ id: 1, name: "admin" }] or [1, 2, 3]
+      if (userData.roles && Array.isArray(userData.roles)) {
+        if (userData.roles.length > 0) {
+          const firstRole = userData.roles[0]
+          console.log("First role raw:", firstRole, "type:", typeof firstRole)
+          if (typeof firstRole === 'object' && firstRole !== null) {
+            userRole = firstRole.name || firstRole.toString()
+          } else if (typeof firstRole === 'number') {
+            userRole = roleIdMap[firstRole] || 'student'
+            console.log("Mapped role ID", firstRole, "to:", userRole)
+          } else if (typeof firstRole === 'string') {
+            // Handle string role IDs like "1", "2", etc.
+            const numRole = parseInt(firstRole, 10)
+            if (!isNaN(numRole)) {
+              userRole = roleIdMap[numRole] || 'student'
+            } else {
+              userRole = firstRole
+            }
+          }
+        }
+      } else if (userData.role) {
+        // Also map userData.role if it's a number-like string
+        const roleStr = String(userData.role)
+        const numRole = parseInt(roleStr, 10)
+        if (!isNaN(numRole)) {
+          userRole = roleIdMap[numRole] || 'student'
+        } else {
+          userRole = roleStr
+        }
+      }
       
       console.log("Detected user role:", userRole)
 
@@ -46,8 +94,8 @@ export default function LoginPage() {
       console.log("Calculated redirect path:", redirectPath)
       console.log("Navigating to:", redirectPath)
       
-      // Force a hard navigation to ensure redirect works
-      window.location.href = redirectPath
+      // Use router.push for client-side navigation so middleware can process cookies
+      router.push(redirectPath)
     } catch (err) {
       const apiError = err as ApiError
       setError(apiError.message || "Login failed. Please check your credentials.")

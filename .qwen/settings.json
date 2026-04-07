@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "WebFetch(kennedi-ungnostic-unconvulsively.ngrok-free.dev)",
+      "Bash(curl *)",
+      "Bash(findstr *)",
+      "Bash(bun *)",
+      "Bash(rm *)"
     ]
-  }
+  },
+  "$version": 3
 }

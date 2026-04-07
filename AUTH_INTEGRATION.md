@@ -155,7 +155,7 @@ Common errors:
 ## Making API Calls with Auth Token
 
 ```typescript
-import axios from 'axios'
+import { axios } from 'kiattp/axios'
 import { getAuthToken } from "@/lib/api/auth-config"
 
 const token = getAuthToken()

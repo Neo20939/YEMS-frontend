@@ -8,6 +8,7 @@ import {
   uploadNote,
   getNotes,
   deleteNote,
+  downloadNote,
   getAvailableSubjects,
   getAvailableClassGrades,
   getTeacherAssignedSubjects,
@@ -200,7 +201,7 @@ export default function NotesUploadPage() {
   }
 
   const handleDownload = async (note: Note) => {
-    const result = await getNotes().downloadNote(note.id)
+    const result = await downloadNote(note.id)
     if (result.success && result.data) {
       toast.success("Download started")
     } else {

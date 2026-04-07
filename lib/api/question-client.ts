@@ -4,7 +4,7 @@
  * Handles bulk question operations and theory marking queue.
  */
 
-import axios from 'axios'
+import { axios } from '@/lib/axios-shim'
 import {
   ApiResponse,
   BulkQuestionUpload,
@@ -25,12 +25,12 @@ const QUESTION_API_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev',
   timeout: 120000, // 2 minutes for bulk uploads
   endpoints: {
-    questions: (examId: string) => `/exams/${examId}/questions`,
-    question: (examId: string, questionId: string) => `/exams/${examId}/questions/${questionId}`,
-    bulkObjective: (examId: string) => `/exams/${examId}/questions/objective/bulk`,
-    bulkTheory: (examId: string) => `/exams/${examId}/questions/theory/upload`,
-    markingQueue: (examId: string) => `/exams/${examId}/questions/theory/marking-queue`,
-    submitMark: (examId: string, markingId: string) => `/exams/${examId}/questions/theory/marking-queue/${markingId}`,
+    questions: (examId: string) => `exams/${examId}/questions`,
+    question: (examId: string, questionId: string) => `exams/${examId}/questions/${questionId}`,
+    bulkObjective: (examId: string) => `exams/${examId}/questions/objective/bulk`,
+    bulkTheory: (examId: string) => `exams/${examId}/questions/theory/upload`,
+    markingQueue: (examId: string) => `exams/${examId}/questions/theory/marking-queue`,
+    submitMark: (examId: string, markingId: string) => `exams/${examId}/questions/theory/marking-queue/${markingId}`,
   },
 }
 

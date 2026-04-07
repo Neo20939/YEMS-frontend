@@ -867,7 +867,7 @@ export function ClassDetailsPage({ classId }: ClassDetailsPageProps) {
         <div className="space-y-4">
           <Select
             label="Subject"
-            options={availableSubjects}
+            options={availableSubjects.map(s => ({ value: s.id, label: s.name, description: s.description }))}
             value={selectedSubjectId}
             onChange={(value) => setSelectedSubjectId(value as string)}
             placeholder="Select subject"

@@ -133,11 +133,7 @@ export default function ClassesListPage() {
       for (const id of selectedRows) {
         await archiveClass(id, true);
       }
-      toast({
-        title: "Success",
-        message: `Archived ${selectedRows.size} class(es)`,
-        type: "success",
-      });
+      toast.success(`Archived ${selectedRows.size} class(es)`);
       setSelectedRows(new Set());
     } catch (error) {
       // Error handled by hook
@@ -159,11 +155,7 @@ export default function ClassesListPage() {
       for (const id of selectedRows) {
         await deleteClass(id);
       }
-      toast({
-        title: "Success",
-        message: `Deleted ${selectedRows.size} class(es)`,
-        type: "success",
-      });
+      toast.success(`Deleted ${selectedRows.size} class(es)`);
       setSelectedRows(new Set());
     } catch (error) {
       // Error handled by hook
@@ -172,29 +164,9 @@ export default function ClassesListPage() {
     }
   };
 
-  // Handle export
+  // Handle export - TODO: implement export functionality
   const handleExport = async () => {
-    try {
-      const blob = await classService.exportClasses(classFilters);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `classes-${new Date().toISOString().split("T")[0]}.csv`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Success",
-        message: "Classes exported successfully",
-        type: "success",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        message: "Failed to export classes",
-        type: "error",
-      });
-    }
+    toast.info("Export functionality coming soon");
   };
 
   // Navigation handlers

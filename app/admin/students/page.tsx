@@ -23,7 +23,7 @@ export default function StudentManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
-  // Check authentication on mount
+
   useEffect(() => {
     if (!userLoading && !user) {
       router.push('/login')
@@ -77,7 +77,7 @@ export default function StudentManagementPage() {
         name: userData.name,
         password: userData.password,
         role: 'student',
-      })
+      }, 'students')
       console.log('Student created successfully:', newStudent)
       setStudents([...students, newStudent])
       setIsModalOpen(false)
@@ -131,7 +131,7 @@ export default function StudentManagementPage() {
     setIsModalOpen(true)
   }
 
-  // Show loading while checking authentication or loading students
+  
   if (userLoading || isLoading) {
     return (
       <AdminLayout>
@@ -145,7 +145,7 @@ export default function StudentManagementPage() {
     )
   }
 
-  // If not authenticated, don't render the page
+ 
   if (!user) {
     return null
   }
@@ -153,7 +153,7 @@ export default function StudentManagementPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Page Header */}
+        
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
@@ -174,7 +174,7 @@ export default function StudentManagementPage() {
           </button>
         </div>
 
-        {/* Filters */}
+        
         <div className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200 dark:border-stone-800">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -204,7 +204,7 @@ export default function StudentManagementPage() {
           </div>
         </div>
 
-        {/* Stats Summary */}
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-stone-900 p-4 rounded-xl border border-stone-200 dark:border-stone-800">
             <div className="flex items-center gap-3">
@@ -258,14 +258,14 @@ export default function StudentManagementPage() {
           </div>
         </div>
 
-        {/* Student Table */}
+       
         <UserTable
           users={filteredStudents}
           onEdit={openEditModal}
           onDelete={handleDeleteStudent}
         />
 
-        {/* Pagination Info */}
+        
         <div className="flex items-center justify-between text-sm text-slate-500">
           <p>
             Showing {filteredStudents.length} of {students.length} students
@@ -281,7 +281,7 @@ export default function StudentManagementPage() {
         </div>
       </div>
 
-      {/* Add/Edit Student Modal */}
+      
       <UserModal
         isOpen={isModalOpen}
         onClose={() => {

@@ -131,7 +131,7 @@ function parsePrometheusMetrics(text: string): SystemMetrics {
   const totalRequests = metrics.http.requests.reduce((sum, r) => sum + r.value, 0);
   const totalErrors = metrics.http.errors.reduce((sum, e) => sum + e.value, 0);
 
-  const activeConnMetric = metrics.http.active.find(r => r.route === '__all__');
+  const activeConnMetric = metrics.http.active.find(r => (r as any).route === '__all__');
   const activeConnections = activeConnMetric?.value || 0;
 
   return {

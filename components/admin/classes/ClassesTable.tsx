@@ -18,7 +18,7 @@ interface ClassesTableProps {
   onViewTimetable?: (classItem: Class) => void;
   onManageEnrollment?: (classItem: Class) => void;
   selectedRows?: Set<string>;
-  onRowSelect?: (id: string, selected: boolean) => void;
+  onRowSelect?: (id: string | number, selected: boolean) => void;
   onSelectAll?: (selected: boolean) => void;
   sortKey?: string;
   sortOrder?: "asc" | "desc";

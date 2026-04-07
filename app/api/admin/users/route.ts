@@ -28,17 +28,48 @@ export async function POST(request: NextRequest) {
     console.log('[Users API] Creating user...')
     console.log('[Users API] Body:', body)
 
-    // Backend expects "Bearer <token>" format
+    // Backend /api/users/ expects specific fields
+    // Transform frontend data to match backend expectations
+    const backendData: Record<string, any> = {
+      email: body.email,
+    }
+    
+    // Handle name - split into firstName and lastName
+    if (body.name) {
+      const nameParts = body.name.split(' ')
+      backendData.firstName = nameParts[0]
+      backendData.lastName = nameParts.slice(1).join(' ') || ''
+    }
+    
+    // Handle password
+    if (body.password) {
+      backendData.password = body.password
+    }
+    
+    // Handle roles - backend expects array
+    if (body.role) {
+      // Map frontend roles to backend roles
+      const roleMap: Record<string, string[]> = {
+        'student': ['student'],
+        'subject_teacher': ['teacher'],
+        'class_teacher': ['teacher'],
+        'teacher': ['teacher'],
+        'professor': ['teacher'],
+        'admin': ['platform_admin'],
+      }
+      backendData.roles = roleMap[body.role] || [body.role]
+    }
+
     const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
 
-    const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(backendData),
     })
 
     console.log('[Users API] Backend response status:', response.status)
@@ -61,7 +92,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: response.status })
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json({ success: true, data: data })
   } catch (error: any) {
     console.error('[Users API] Proxy error:', error)
     return NextResponse.json(
@@ -78,10 +109,10 @@ export async function GET(request: NextRequest) {
     console.log('[Users API] Proxying GET request to backend...')
     console.log('[Users API] Token present:', !!token)
 
-    // Backend expects "Bearer <token>" format
+    // Backend has /api/users/ for listing users
     const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
 
-    const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/`, {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -111,7 +142,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data, { status: response.status })
     }
 
-    return NextResponse.json(data)
+    // Wrap response in success format to match expected format
+    return NextResponse.json({ success: true, data: data })
   } catch (error: any) {
     console.error('[Users API] Proxy error:', error)
     return NextResponse.json(
@@ -131,12 +163,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 })
     }
 
-    // Backend expects "Bearer <token>" format
+    // Backend uses /api/users/{id} for deleting users
     const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
 
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
       method: 'DELETE',
       headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
     })

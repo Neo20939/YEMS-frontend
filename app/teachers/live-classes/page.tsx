@@ -616,6 +616,7 @@ export default function LiveClassesPage() {
                           time: '10:00',
                           duration: 60,
                           description: '',
+                          meetingLink: '',
                         })}
                         className="flex-1 py-3 border border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
                       >

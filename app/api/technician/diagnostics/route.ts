@@ -1,7 +1,7 @@
 /**
  * Technician Diagnostics API Proxy
  *
- * Proxies system diagnostics requests to backend
+ * Proxies diagnostics requests to backend
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -11,31 +11,42 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-un
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
+    const yemsSession = request.cookies.get('yems_session')?.value
 
-    // Try to fetch from backend diagnostics endpoint
-    const response = await fetch(`${API_BASE_URL}/status/diagnostics`, {
-      headers: {
-        ...(token ? { Authorization: token } : {}),
-      },
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      return NextResponse.json(data)
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    
+    if (token) {
+      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`
+    }
+    if (yemsSession) {
+      headers['Cookie'] = `yems_session=${yemsSession}`
     }
 
-    // Backend returned error status
-    const errorData = await response.text()
-    console.log('[Diagnostics API] Backend returned error:', response.status, errorData)
+    const response = await fetch(`${API_BASE_URL}/status/diagnostics`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[Diagnostics API] Backend error:', response.status, errorText)
+      return NextResponse.json(
+        { error: `Backend error: ${response.status}` },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json()
+    return NextResponse.json(data)
+  } catch (error: any) {
+    console.error('[Diagnostics API] Proxy error:', error)
     return NextResponse.json(
-      { error: 'Backend diagnostics endpoint unavailable', status: response.status },
-      { status: response.status }
-    )
-  } catch (error) {
-    console.error('Diagnostics proxy error:', error)
-    return NextResponse.json(
-      { error: 'Failed to connect to backend diagnostics endpoint' },
-      { status: 503 }
+      { error: 'Failed to fetch diagnostics', message: error.message },
+      { status: 500 }
     )
   }
 }

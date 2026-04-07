@@ -4,7 +4,7 @@
  * Handles all note management API calls including upload, download, and CRUD operations.
  */
 
-import axios from 'axios'
+import { axios } from '@/lib/axios-shim'
 import {
   ApiResponse,
   Note,
@@ -26,10 +26,10 @@ const NOTES_API_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
   timeout: 60000, // 60 seconds for file uploads
   endpoints: {
-    notes: '/api/notes',
-    upload: '/api/notes/upload',
-    download: (noteId: string) => `/api/notes/${noteId}/download`,
-    note: (noteId: string) => `/api/notes/${noteId}`,
+    notes: 'api/notes',
+    upload: 'api/notes/upload',
+    download: (noteId: string) => `api/notes/${noteId}/download`,
+    note: (noteId: string) => `api/notes/${noteId}`,
   },
 }
 
@@ -149,7 +149,7 @@ export async function uploadNote(
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        onUploadProgress: (progressEvent) => {
+        onUploadProgress: (progressEvent: any) => {
           if (progressEvent.total && onProgress) {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
             onProgress(progress)

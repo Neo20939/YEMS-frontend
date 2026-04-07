@@ -22,12 +22,13 @@ export default function ViewAssignedSubjects({
   async function loadAssignedSubjects() {
     setIsLoading(true)
     try {
-      const [allSubjects, assignedIds] = await Promise.all([
+      const [allSubjects, assignedSubjectsList] = await Promise.all([
         getSubjects(),
         getTeacherAssignedSubjects(teacher.id),
       ])
 
-      // Match assigned IDs with full subject objects
+      // Match assigned subjects with full subject objects
+      const assignedIds = assignedSubjectsList.map(s => s.id)
       const subjects = allSubjects.filter(s => assignedIds.includes(s.id))
       setAssignedSubjects(subjects)
     } catch (error) {

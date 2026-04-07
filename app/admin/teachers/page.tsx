@@ -11,9 +11,15 @@ import { useUser } from "@/contexts/UserContext"
 import { useRouter } from "next/navigation"
 
 const availableRoles = [
-  { value: "teacher", label: "Teacher", description: "Create and manage courses" },
-  { value: "professor", label: "Professor", description: "Senior teaching staff" },
+  { value: "subject_teacher", label: "Subject Teacher", description: "Teacher assigned to teach specific subjects to classes" },
+  { value: "class_teacher", label: "Class Teacher", description: "Form teacher responsible for an entire class" },
 ]
+
+// Helper to check if user is a teacher type
+function isTeacher(user: User): boolean {
+  const role = String(user.role).toLowerCase()
+  return role === 'subject_teacher' || role === 'class_teacher'
+}
 
 export default function TeacherManagementPage() {
   const router = useRouter()
@@ -44,7 +50,7 @@ export default function TeacherManagementPage() {
     setIsLoading(true)
     try {
       const data = await getUsers()
-      const teachersList = data.filter(u => u.role === 'teacher' || u.role === 'professor')
+      const teachersList = data.filter(isTeacher)
       console.log('Loaded teachers:', teachersList)
       setTeachers(Array.isArray(teachersList) ? teachersList : [])
     } catch (error) {

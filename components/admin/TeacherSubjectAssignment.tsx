@@ -30,7 +30,8 @@ export default function TeacherSubjectAssignment({
         getTeacherAssignedSubjects(teacher.id),
       ])
       setSubjects(allSubjects)
-      setSelectedSubjects(assignedSubjects)
+      // Extract subject IDs from the Subject objects
+      setSelectedSubjects(assignedSubjects.map(s => s.id))
     } catch (error) {
       console.error('Failed to load subjects:', error)
     } finally {

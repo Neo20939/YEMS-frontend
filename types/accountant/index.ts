@@ -1,5 +1,8 @@
 // Accountant Portal Types
 
+export type { Transaction } from './dashboard'
+export type { NextAction } from './dashboard'
+
 export interface Student {
   id: string;
   studentId: string;
@@ -72,7 +75,7 @@ export interface BankTransaction {
   type: 'credit' | 'debit';
   balance: number;
   matchedPaymentId?: string;
-  status: 'unmatched' | 'matched' | 'reconciled';
+  status: 'pending' | 'unmatched' | 'matched' | 'reconciled';
   reconciledBy?: string;
   reconciledAt?: string;
 }

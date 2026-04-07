@@ -19,7 +19,7 @@ export interface MidtermCard {
   /** Exam status */
   status: "not-started" | "upcoming" | "new" | "locked"
   /** Subject icon type */
-  iconType: "math" | "science" | "english" | "philosophy" | "history" | "chemistry"
+  iconType: "math" | "science" | "english" | "philosophy" | "history" | "chemistry" | "computer"
   /** Route to navigate to */
   route: string
 }

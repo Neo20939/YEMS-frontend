@@ -63,7 +63,7 @@ export default function UserManagementPage() {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesRole = roleFilter === "all" || user.role.toLowerCase() === roleFilter.toLowerCase()
+    const matchesRole = roleFilter === "all" || String(user.role).toLowerCase() === roleFilter.toLowerCase()
     const matchesStatus = statusFilter === "all" || (user.status || 'active') === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   }) : []

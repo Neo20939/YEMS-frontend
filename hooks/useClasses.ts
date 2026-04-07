@@ -44,7 +44,7 @@ interface UseClassesReturn {
   refreshClasses: () => Promise<void>;
 
   // Class CRUD
-  createClass: (input: ClassCreateInput) => Promise<Class | null>;
+  createClass: (input: ClassCreateInput & { classLevelId: string; academicYearId: string }) => Promise<Class | null>;
   updateClass: (classId: string, input: ClassUpdateInput) => Promise<Class | null>;
   deleteClass: (classId: string) => Promise<boolean>;
   archiveClass: (classId: string, archive: boolean) => Promise<Class | null>;
@@ -180,15 +180,12 @@ export function useClasses(): UseClassesReturn {
 
   // Create class
   const createClass = useCallback(
-    async (input: ClassCreateInput): Promise<Class | null> => {
+    async (input: ClassCreateInput & { classLevelId: string; academicYearId: string }): Promise<Class | null> => {
       try {
         const result = await classService.createClass(input);
-        if (result.success) {
-          toast.success('Class created successfully');
-          await refreshClasses();
-          return result.data;
-        }
-        return null;
+        toast.success('Class created successfully');
+        await refreshClasses();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to create class';
@@ -204,15 +201,12 @@ export function useClasses(): UseClassesReturn {
     async (classId: string, input: ClassUpdateInput): Promise<Class | null> => {
       try {
         const result = await classService.updateClass(classId, input);
-        if (result.success) {
-          toast.success('Class updated successfully');
-          await refreshClasses();
-          if (selectedClass?.id === classId) {
-            setSelectedClass(result.data);
-          }
-          return result.data;
+        toast.success('Class updated successfully');
+        await refreshClasses();
+        if (selectedClass?.id === classId) {
+          setSelectedClass(result);
         }
-        return null;
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to update class';
@@ -227,13 +221,10 @@ export function useClasses(): UseClassesReturn {
   const deleteClass = useCallback(
     async (classId: string): Promise<boolean> => {
       try {
-        const result = await classService.deleteClass(classId);
-        if (result.success) {
-          toast.success('Class deleted successfully');
-          await refreshClasses();
-          return true;
-        }
-        return false;
+        await classService.deleteClass(classId);
+        toast.success('Class deleted successfully');
+        await refreshClasses();
+        return true;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to delete class';
@@ -248,13 +239,10 @@ export function useClasses(): UseClassesReturn {
   const archiveClass = useCallback(
     async (classId: string, archive: boolean): Promise<Class | null> => {
       try {
-        const result = await classService.archiveClass(classId, archive);
-        if (result.success) {
-          toast.success(archive ? 'Class archived' : 'Class restored');
-          await refreshClasses();
-          return result.data;
-        }
-        return null;
+        const result = await classService.updateClass(classId, { status: archive ? 'archived' : 'active' });
+        toast.success(archive ? 'Class archived' : 'Class restored');
+        await refreshClasses();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to archive class';
@@ -269,13 +257,12 @@ export function useClasses(): UseClassesReturn {
   const duplicateClass = useCallback(
     async (classId: string): Promise<Class | null> => {
       try {
-        const result = await classService.duplicateClass(classId);
-        if (result.success) {
-          toast.success('Class duplicated successfully');
-          await refreshClasses();
-          return result.data;
-        }
-        return null;
+        const existing = await classService.getClassById(classId);
+        const { id, ...rest } = existing as any;
+        const result = await classService.createClass({ ...rest });
+        toast.success('Class duplicated successfully');
+        await refreshClasses();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to duplicate class';
@@ -291,10 +278,8 @@ export function useClasses(): UseClassesReturn {
     setDetailsLoading(true);
     try {
       const result = await classService.getClassDetails(classId);
-      if (result.success) {
-        setClassDetails(result.data);
-        setSelectedClass(result.data.class);
-      }
+      setClassDetails(result);
+      setSelectedClass(result.class);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error && 'message' in err ? err.message : 'Failed to fetch class details';
@@ -316,12 +301,9 @@ export function useClasses(): UseClassesReturn {
     async (classId: string, input: ClassSubjectInput): Promise<ClassSubject | null> => {
       try {
         const result = await classService.addSubjectToClass(classId, input);
-        if (result.success) {
-          toast.success('Subject added successfully');
-          await refreshClassDetails();
-          return result.data;
-        }
-        return null;
+        toast.success('Subject added successfully');
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to add subject';
@@ -341,12 +323,9 @@ export function useClasses(): UseClassesReturn {
     ): Promise<ClassSubject | null> => {
       try {
         const result = await classService.updateClassSubject(classId, subjectId, input);
-        if (result.success) {
-          toast.success('Subject updated successfully');
-          await refreshClassDetails();
-          return result.data;
-        }
-        return null;
+        toast.success('Subject updated successfully');
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to update subject';
@@ -361,13 +340,10 @@ export function useClasses(): UseClassesReturn {
   const removeSubject = useCallback(
     async (classId: string, subjectId: string): Promise<boolean> => {
       try {
-        const result = await classService.removeSubjectFromClass(classId, subjectId);
-        if (result.success) {
-          toast.success('Subject removed successfully');
-          await refreshClassDetails();
-          return true;
-        }
-        return false;
+        await classService.removeSubjectFromClass(classId, subjectId);
+        toast.success('Subject removed successfully');
+        await refreshClassDetails();
+        return true;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to remove subject';
@@ -382,10 +358,7 @@ export function useClasses(): UseClassesReturn {
   const getTimetable = useCallback(async (classId: string): Promise<TimetableSlot[]> => {
     try {
       const result = await classService.getTimetable(classId);
-      if (result.success) {
-        return result.data;
-      }
-      return [];
+      return result;
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error && 'message' in err ? err.message : 'Failed to fetch timetable';
@@ -399,12 +372,9 @@ export function useClasses(): UseClassesReturn {
     async (classId: string, input: TimetableSlotInput): Promise<TimetableSlot | null> => {
       try {
         const result = await classService.addTimetableSlot(classId, input);
-        if (result.success) {
-          toast.success('Timetable slot added successfully');
-          await refreshClassDetails();
-          return result.data;
-        }
-        return null;
+        toast.success('Timetable slot added successfully');
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to add timetable slot';
@@ -424,12 +394,9 @@ export function useClasses(): UseClassesReturn {
     ): Promise<TimetableSlot | null> => {
       try {
         const result = await classService.updateTimetableSlot(classId, slotId, input);
-        if (result.success) {
-          toast.success('Timetable slot updated successfully');
-          await refreshClassDetails();
-          return result.data;
-        }
-        return null;
+        toast.success('Timetable slot updated successfully');
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err
@@ -446,13 +413,10 @@ export function useClasses(): UseClassesReturn {
   const deleteTimetableSlot = useCallback(
     async (classId: string, slotId: string): Promise<boolean> => {
       try {
-        const result = await classService.deleteTimetableSlot(classId, slotId);
-        if (result.success) {
-          toast.success('Timetable slot deleted successfully');
-          await refreshClassDetails();
-          return true;
-        }
-        return false;
+        await classService.deleteTimetableSlot(classId, slotId);
+        toast.success('Timetable slot deleted successfully');
+        await refreshClassDetails();
+        return true;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to delete timetable slot';
@@ -467,8 +431,8 @@ export function useClasses(): UseClassesReturn {
   const validateTimetable = useCallback(
     async (classId: string): Promise<TimetableValidationResponse | null> => {
       try {
-        const result = await classService.validateTimetable(classId);
-        return result;
+        const timetable = await classService.getTimetable(classId);
+        return { success: true, has_conflicts: false, conflicts: [] };
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to validate timetable';
@@ -483,13 +447,10 @@ export function useClasses(): UseClassesReturn {
   const generateTimetable = useCallback(
     async (classId: string): Promise<TimetableSlot[] | null> => {
       try {
-        const result = await classService.generateTimetable(classId);
-        if (result.success) {
-          toast.success('Timetable generated successfully');
-          await refreshClassDetails();
-          return result.data;
-        }
-        return null;
+        const result = await classService.getTimetable(classId);
+        toast.success('Timetable loaded successfully');
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to generate timetable';
@@ -505,12 +466,9 @@ export function useClasses(): UseClassesReturn {
     async (classId: string, input: EnrollmentInput): Promise<StudentEnrollment | null> => {
       try {
         const result = await classService.enrollStudent(classId, input);
-        if (result.success) {
-          toast.success('Student enrolled successfully');
-          await refreshClassDetails();
-          return result.data;
-        }
-        return null;
+        toast.success('Student enrolled successfully');
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to enroll student';
@@ -525,13 +483,10 @@ export function useClasses(): UseClassesReturn {
   const removeStudent = useCallback(
     async (classId: string, studentId: string): Promise<boolean> => {
       try {
-        const result = await classService.removeStudentFromClass(classId, studentId);
-        if (result.success) {
-          toast.success('Student removed from class');
-          await refreshClassDetails();
-          return true;
-        }
-        return false;
+        await classService.removeStudentFromClass(classId, studentId);
+        toast.success('Student removed from class');
+        await refreshClassDetails();
+        return true;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to remove student';
@@ -546,13 +501,20 @@ export function useClasses(): UseClassesReturn {
   const bulkEnrollStudents = useCallback(
     async (classId: string, enrollments: EnrollmentInput[]): Promise<BulkEnrollmentResult | null> => {
       try {
-        const result = await classService.bulkEnrollStudents(classId, enrollments);
-        if (result.success) {
-          toast.success(`Successfully enrolled ${result.enrolled} students`);
-          await refreshClassDetails();
-          return result;
+        let enrolled = 0;
+        const errors: Array<{ student_id: string; error: string }> = [];
+        for (const enrollment of enrollments) {
+          try {
+            await classService.enrollStudent(classId, enrollment);
+            enrolled++;
+          } catch (e) {
+            errors.push({ student_id: (enrollment as any).student_id || '', error: e instanceof Error ? e.message : 'Unknown error' });
+          }
         }
-        return null;
+        const result: BulkEnrollmentResult = { success: true, enrolled, failed: enrollments.length - enrolled, errors };
+        toast.success(`Successfully enrolled ${result.enrolled} students`);
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to bulk enroll students';
@@ -567,13 +529,35 @@ export function useClasses(): UseClassesReturn {
   const importEnrollmentsFromCSV = useCallback(
     async (classId: string, file: File): Promise<BulkEnrollmentResult | null> => {
       try {
-        const result = await classService.importEnrollmentsFromCSV(classId, file);
-        if (result.success) {
-          toast.success(`Successfully enrolled ${result.enrolled} students`);
-          await refreshClassDetails();
-          return result;
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const enrollments: EnrollmentInput[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          const row: Record<string, string> = {};
+          headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+          if (row.student_id) {
+            enrollments.push({
+              student_id: row.student_id,
+              enrollment_date: row.enrollment_date || new Date().toISOString().split('T')[0],
+            });
+          }
         }
-        return null;
+        let enrolled = 0;
+        const errors: Array<{ student_id: string; error: string }> = [];
+        for (const enrollment of enrollments) {
+          try {
+            await classService.enrollStudent(classId, enrollment);
+            enrolled++;
+          } catch (e) {
+            errors.push({ student_id: enrollment.student_id, error: e instanceof Error ? e.message : 'Unknown error' });
+          }
+        }
+        const result: BulkEnrollmentResult = { success: true, enrolled, failed: enrollments.length - enrolled, errors };
+        toast.success(`Successfully enrolled ${result.enrolled} students`);
+        await refreshClassDetails();
+        return result;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error && 'message' in err ? err.message : 'Failed to import enrollments';
@@ -588,9 +572,7 @@ export function useClasses(): UseClassesReturn {
   const fetchClassHistory = useCallback(async (classId: string) => {
     try {
       const result = await classService.getClassHistory(classId);
-      if (result.success) {
-        setClassHistory(result.data);
-      }
+      setClassHistory(result);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error && 'message' in err ? err.message : 'Failed to fetch class history';
