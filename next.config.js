@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Optimize package imports for faster compilation
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-slot'],
+  },
+
   images: {
     remotePatterns: [
       {
@@ -8,11 +13,6 @@ const nextConfig = {
       },
     ],
   },
-  // CORS placeholder for future use
-  // yeshuacorsissue: {
-  //   allowedOrigins: ['https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'],
-  //   enabled: false,
-  // },
 }
 
 module.exports = nextConfig
