@@ -10,6 +10,7 @@ import { Pagination, Button, ToastContainer, useToast } from "@/components/ui";
 import { Plus, Archive, Trash2, Download } from "lucide-react";
 import type { Class } from "@/types/class";
 import classService from "@/lib/classService";
+import { getUsers, User } from "@/lib/api/admin-client";
 
 export default function ClassesListPage() {
   const {
@@ -48,15 +49,29 @@ export default function ClassesListPage() {
     // Fetch teachers for dropdown
     const fetchTeachers = async () => {
       try {
-        // TODO: Replace with actual teachers API
+        // Fetch teachers from admin users API
+        const users = await getUsers();
+        // Filter for teacher roles only
+        const teacherUsers = users
+          .filter((u: User) => {
+            const role = String(u.role).toLowerCase();
+            return role === 'subject_teacher' || role === 'class_teacher' || role === 'teacher';
+          })
+          .map((t: User) => ({
+            id: t.id,
+            name: t.name,
+            email: t.email,
+          }));
+        setTeachers(teacherUsers);
+      } catch (error) {
+        console.error("Failed to fetch teachers:", error);
+        // Fallback to mock data if API fails
         const mockTeachers = [
           { id: "1", name: "John Doe", email: "john.doe@school.edu" },
           { id: "2", name: "Jane Smith", email: "jane.smith@school.edu" },
           { id: "3", name: "Mike Johnson", email: "mike.johnson@school.edu" },
         ];
         setTeachers(mockTeachers);
-      } catch (error) {
-        console.error("Failed to fetch teachers:", error);
       }
     };
 

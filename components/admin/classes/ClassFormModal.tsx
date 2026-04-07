@@ -53,27 +53,34 @@ export function ClassFormModal({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Populate form when editing
+  // Track previous isOpen state to detect opening transitions
+  const prevIsOpenRef = React.useRef<boolean>(isOpen);
+
+  // Populate form when editing or when modal opens
   useEffect(() => {
-    if (classToEdit) {
-      setClassName(classToEdit.class_name);
-      setAcademicYear(classToEdit.academic_year);
-      setLevel(classToEdit.level);
-      setStream(classToEdit.stream);
-      setMaxCapacity(classToEdit.max_capacity.toString());
-      setFormTeacherId(classToEdit.form_teacher_id || "");
-    } else {
-      // Reset form for create mode
-      setClassName("");
-      setAcademicYear(academicYears[0] || "");
-      setLevel("");
-      setStream("");
-      setMaxCapacity("40");
-      setFormTeacherId("");
+    // Only reset form when modal is opening (transitioning from closed to open)
+    if (!prevIsOpenRef.current && isOpen) {
+      if (classToEdit) {
+        setClassName(classToEdit.class_name);
+        setAcademicYear(classToEdit.academic_year);
+        setLevel(classToEdit.level);
+        setStream(classToEdit.stream);
+        setMaxCapacity(classToEdit.max_capacity.toString());
+        setFormTeacherId(classToEdit.form_teacher_id || "");
+      } else {
+        // Reset form for create mode - use stable default
+        setClassName("");
+        setAcademicYear(academicYears[0] || "2024/2025");
+        setLevel("");
+        setStream("");
+        setMaxCapacity("40");
+        setFormTeacherId("");
+      }
+      setErrors({});
+      setTouched({});
     }
-    setErrors({});
-    setTouched({});
-  }, [classToEdit, isOpen, academicYears]);
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, classToEdit]); // Removed academicYears from dependencies
 
   // Validate field
   const validateField = useCallback((field: string, value: string) => {
@@ -231,7 +238,6 @@ export function ClassFormModal({
           errorMessage={touched.className ? errors.className : undefined}
           helperText="Enter a descriptive name for the class"
           required
-          disabled={isSubmitting}
         />
 
         {/* Academic Year */}
@@ -244,7 +250,6 @@ export function ClassFormModal({
           error={touched.academicYear && !!errors.academicYear}
           errorMessage={touched.academicYear ? errors.academicYear : undefined}
           required
-          disabled={isSubmitting}
         />
 
         {/* Level */}
@@ -289,7 +294,6 @@ export function ClassFormModal({
           error={touched.stream && !!errors.stream}
           errorMessage={touched.stream ? errors.stream : undefined}
           required
-          disabled={isSubmitting}
         />
 
         {/* Maximum Capacity */}
@@ -306,7 +310,6 @@ export function ClassFormModal({
           errorMessage={touched.maxCapacity ? errors.maxCapacity : undefined}
           helperText="Recommended: 30-50 students"
           required
-          disabled={isSubmitting}
         />
 
         {/* Form Teacher */}
@@ -321,7 +324,7 @@ export function ClassFormModal({
           error={touched.formTeacherId && !!errors.formTeacherId}
           errorMessage={touched.formTeacherId ? errors.formTeacherId : undefined}
           required
-          disabled={isSubmitting || teachers.length === 0}
+          disabled={teachers.length === 0}
           clearable
         />
       </form>
