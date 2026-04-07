@@ -18,6 +18,7 @@ const availableRoles = [
 // Helper to check if user is a teacher type
 function isTeacher(user: User): boolean {
   const role = String(user.role).toLowerCase()
+  console.log('[isTeacher] Checking user:', user.name, 'role:', user.role, 'lowercase:', role)
   return role === 'subject_teacher' || role === 'class_teacher'
 }
 
@@ -50,6 +51,8 @@ export default function TeacherManagementPage() {
     setIsLoading(true)
     try {
       const data = await getUsers()
+      console.log('Raw users from API:', data)
+      console.log('User roles:', data.map(u => ({ name: u.name, role: u.role })))
       const teachersList = data.filter(isTeacher)
       console.log('Loaded teachers:', teachersList)
       setTeachers(Array.isArray(teachersList) ? teachersList : [])
@@ -84,11 +87,27 @@ export default function TeacherManagementPage() {
       }
 
       console.log('Creating teacher with data:', userData)
+
+      // Split name into firstName and lastName
+      const nameParts = userData.name?.trim().split(' ')
+      const firstName = nameParts?.[0] || ''
+      // Ensure lastName is never empty - use firstName if only one name provided
+      const lastName = nameParts?.slice(1).join(' ') || nameParts?.[0] || ''
+
+      // Map role string to role ID
+      // Backend role IDs: 3 = subject_teacher, 4 = class_teacher
+      const roleIdMap: Record<string, number> = {
+        'subject_teacher': 3,
+        'class_teacher': 4,
+      }
+      const roleId = roleIdMap[userData.role] || 3
+
       const newTeacher = await createUser({
         email: userData.email,
-        name: userData.name,
         password: userData.password,
-        role: userData.role,
+        firstName,
+        lastName,
+        roles: [roleId],
       })
       console.log('Teacher created successfully:', newTeacher)
       setTeachers([...teachers, newTeacher])
@@ -96,13 +115,18 @@ export default function TeacherManagementPage() {
     } catch (error: any) {
       console.error('Failed to create teacher:', error)
       let errorMessage = 'Failed to create teacher. '
-      if (error.response?.status === 401) {
+      const status = error.response?.status || error.status
+      const data = error.response?.data || error
+      
+      if (status === 401) {
         errorMessage += 'You are not authorized. Please log in again.'
         window.location.href = '/login'
-      } else if (error.response?.status === 400) {
-        errorMessage += error.response?.data?.message || 'Invalid data provided.'
-      } else if (error.response?.status === 409) {
+      } else if (status === 400) {
+        errorMessage += data?.message || data?.error || 'Invalid data provided.'
+      } else if (status === 409) {
         errorMessage += 'Teacher with this email already exists.'
+      } else if (status === 500) {
+        errorMessage += data?.message || data?.error || 'Server error. Please try again.'
       } else {
         errorMessage += error.message || 'Please try again.'
       }

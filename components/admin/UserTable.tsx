@@ -14,6 +14,11 @@ interface UserTableProps {
 export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, onViewSubjects }: UserTableProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
+  const isTeacher = (role: string) => {
+    const normalizedRole = String(role).toLowerCase()
+    return normalizedRole === 'subject_teacher' || normalizedRole === 'class_teacher' || normalizedRole === 'teacher'
+  }
+
   const getStatusBadge = (status: User["status"] | undefined) => {
     const safeStatus = status || 'pending' // Default to 'pending' if undefined
     
@@ -48,6 +53,8 @@ export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, o
       Student: "bg-sage/10 text-sage",
       Guest: "bg-stone-100 text-stone-700",
       teacher: "bg-blue-100 text-blue-700",
+      subject_teacher: "bg-blue-100 text-blue-700",
+      class_teacher: "bg-purple-100 text-purple-700",
       platform_admin: "bg-primary/10 text-primary",
       technician: "bg-amber-100 text-amber-700",
     }
@@ -139,7 +146,7 @@ export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, o
                 </div>
               ) : (
                 <>
-                  {user.role === 'teacher' && onViewSubjects && user.assignedSubjects && user.assignedSubjects.length > 0 && (
+                  {isTeacher(user.role) && onViewSubjects && user.assignedSubjects && user.assignedSubjects.length > 0 && (
                     <button
                       onClick={() => onViewSubjects(user)}
                       className="p-2 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700 rounded-lg transition-colors"
@@ -148,7 +155,7 @@ export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, o
                       <span className="material-symbols-outlined text-lg">visibility</span>
                     </button>
                   )}
-                  {user.role === 'teacher' && onAssignSubjects && (
+                  {isTeacher(user.role) && onAssignSubjects && (
                     <button
                       onClick={() => onAssignSubjects(user)}
                       className="p-2 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"

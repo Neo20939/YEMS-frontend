@@ -24,8 +24,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const token = request.headers.get('authorization')
+    
+    // Get session cookie from incoming request
+    const sessionCookie = request.cookies.get('yems_session')?.value
 
     console.log('[Users API] Creating user...')
+    console.log('[Users API] yems_session cookie:', sessionCookie ? 'present' : 'missing')
     console.log('[Users API] Body:', body)
 
     // Backend /api/users/ expects specific fields
@@ -34,8 +38,12 @@ export async function POST(request: NextRequest) {
       email: body.email,
     }
     
-    // Handle name - split into firstName and lastName
-    if (body.name) {
+    // Handle name - check for firstName/lastName OR name (backwards compatibility)
+    if (body.firstName && body.lastName) {
+      backendData.firstName = body.firstName
+      backendData.lastName = body.lastName
+    } else if (body.name) {
+      // Fallback: split name into firstName and lastName
       const nameParts = body.name.split(' ')
       backendData.firstName = nameParts[0]
       backendData.lastName = nameParts.slice(1).join(' ') || ''
@@ -46,29 +54,45 @@ export async function POST(request: NextRequest) {
       backendData.password = body.password
     }
     
-    // Handle roles - backend expects array
-    if (body.role) {
-      // Map frontend roles to backend roles
-      const roleMap: Record<string, string[]> = {
-        'student': ['student'],
-        'subject_teacher': ['teacher'],
-        'class_teacher': ['teacher'],
-        'teacher': ['teacher'],
-        'professor': ['teacher'],
-        'admin': ['platform_admin'],
+    // Handle roles - backend expects array of numbers (role IDs)
+    if (body.roles && Array.isArray(body.roles)) {
+      // Already in correct format (array of numbers)
+      backendData.roles = body.roles
+    } else if (body.role) {
+      // Map frontend role strings to backend role IDs (legacy format)
+      const roleIdMap: Record<string, number> = {
+        'student': 7,        // First student role ID
+        'subject_teacher': 3,
+        'class_teacher': 4,
+        'teacher': 3,
+        'admin': 1,
+        'platform_admin': 1,
+        'technician': 2,
+        'finance': 5,
       }
-      backendData.roles = roleMap[body.role] || [body.role]
+      const roleId = roleIdMap[body.role] || 3
+      backendData.roles = [roleId]
     }
 
     const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
 
-    const response = await fetch(`${API_BASE_URL}/api/users/`, {
+    // Build headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    
+    console.log('[Users API] Session cookie value:', sessionCookie ? 'present' : 'missing')
+    if (sessionCookie) {
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
+
+    console.log('[Users API] Final headers:', JSON.stringify(headers))
+
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
+      headers,
       body: JSON.stringify(backendData),
     })
 
@@ -89,14 +113,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (!response.ok) {
+      console.error('[Users API] Backend error response:', data)
       return NextResponse.json(data, { status: response.status })
     }
 
     return NextResponse.json({ success: true, data: data })
   } catch (error: any) {
     console.error('[Users API] Proxy error:', error)
+    console.error('[Users API] Error details:', error.stack)
     return NextResponse.json(
-      { error: 'Failed to create user', message: error.message },
+      { error: 'Failed to create user', message: error.message || 'Server error' },
       { status: 500 }
     )
   }
@@ -105,25 +131,46 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
 
     console.log('[Users API] Proxying GET request to backend...')
     console.log('[Users API] Token present:', !!token)
+    console.log('[Users API] Session cookie present:', !!sessionCookie)
 
     // Backend has /api/users/ for listing users
     const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
 
-    const response = await fetch(`${API_BASE_URL}/api/users/`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
-    })
+    // Build headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    if (sessionCookie) {
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+      console.log('[Users API] Sending cookie to backend')
+    }
+
+    console.log('[Users API] Calling backend:', `${API_BASE_URL}/api/users`)
+    
+    let response
+    try {
+      response = await fetch(`${API_BASE_URL}/api/users`, {
+        headers,
+      })
+    } catch (fetchError: any) {
+      console.error('[Users API] Fetch error:', fetchError.message)
+      console.error('[Users API] Fetch error type:', fetchError.constructor.name)
+      return NextResponse.json(
+        { error: 'Failed to connect to backend', message: fetchError.message, type: fetchError.constructor.name },
+        { status: 502 }
+      )
+    }
 
     console.log('[Users API] Backend response status:', response.status)
 
     const text = await response.text()
-    console.log('[Users API] Backend response body:', text.substring(0, 500))
+    console.log('[Users API] Backend response body:', text.substring(0, 1000))
 
     // Try to parse as JSON
     let data
@@ -137,6 +184,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    console.log('[Users API] Parsed data:', data)
+    console.log('[Users API] Is array?', Array.isArray(data))
+
     if (!response.ok) {
       console.error('[Users API] Backend error:', response.status, data)
       return NextResponse.json(data, { status: response.status })
@@ -146,8 +196,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: data })
   } catch (error: any) {
     console.error('[Users API] Proxy error:', error)
+    console.error('[Users API] Error stack:', error.stack)
     return NextResponse.json(
-      { error: 'Failed to fetch users', message: error.message },
+      { error: 'Failed to fetch users', message: error.message, details: error.stack },
       { status: 500 }
     )
   }
@@ -156,6 +207,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('id')
 
@@ -166,13 +218,17 @@ export async function DELETE(request: NextRequest) {
     // Backend uses /api/users/{id} for deleting users
     const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
 
+    // Build headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    if (sessionCookie) headers['Cookie'] = `yems_session=${sessionCookie}`
+
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
+      headers,
     })
 
     if (!response.ok) {

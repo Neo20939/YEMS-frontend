@@ -23,10 +23,11 @@ export interface User {
 }
 
 export interface CreateUserRequest {
-  name: string
   email: string
   password: string
-  role: string
+  firstName: string
+  lastName: string
+  roles: number[]
 }
 
 export interface UpdateUserRequest {
@@ -132,16 +133,65 @@ apiClient.interceptors.response.use(
 export async function getUsers(): Promise<User[]> {
   try {
     const response = await apiClient.get<any>('admin/users')
+    console.log('[getUsers] Full response:', response)
+    console.log('[getUsers] response.data:', response.data)
+    console.log('[getUsers] response.data.data:', response.data.data)
+    
     // Handle different response formats: { success: true, data: [...] } or just [...]
     const responseData = response.data
     let users: User[] = []
+    
+    // Extract users from response
+    let rawUsers: any[] = []
     if (Array.isArray(responseData)) {
-      users = responseData
-    } else if (responseData.data && Array.isArray(responseData.data)) {
-      users = responseData.data
+      rawUsers = responseData
+    } else if (responseData.data) {
+      // Check if responseData.data is the actual array
+      if (Array.isArray(responseData.data)) {
+        rawUsers = responseData.data
+      } else if (responseData.data.data && Array.isArray(responseData.data.data)) {
+        // response.data.data.data = Array(20) - the actual users
+        rawUsers = responseData.data.data
+      } else if (responseData.data.users && Array.isArray(responseData.data.users)) {
+        rawUsers = responseData.data.users
+      } else if (responseData.data.results && Array.isArray(responseData.data.results)) {
+        rawUsers = responseData.data.results
+      }
     } else if (responseData.results && Array.isArray(responseData.results)) {
-      users = responseData.results
+      rawUsers = responseData.results
     }
+    
+    console.log('[getUsers] Raw users extracted:', rawUsers.length)
+    
+    console.log('[getUsers] Raw users extracted:', rawUsers)
+    
+    // Map backend response to frontend User format
+    users = rawUsers.map((user: any) => ({
+      id: user.id || user._id,
+      name: user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user.name || user.email || 'Unknown',
+      email: user.email || '',
+      // Handle roles - backend returns array of role IDs (numbers), convert to role names
+      role: (() => {
+        const roleId = Array.isArray(user.roles) ? user.roles[0] : user.roles
+        const roleIdMap: Record<number, string> = {
+          1: 'admin',
+          2: 'technician',
+          3: 'subject_teacher',
+          4: 'class_teacher',
+          5: 'finance',
+          6: 'student',
+          7: 'student',
+        }
+        return roleIdMap[Number(roleId)] || 'student'
+      })(),
+      status: user.status || 'active',
+      assignedSubjects: user.assignedSubjects || [],
+      createdAt: user.createdAt || user.created_at,
+      updatedAt: user.updatedAt || user.updated_at,
+    }))
+    
     return users
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -167,23 +217,37 @@ export async function createUser(userData: CreateUserRequest, endpoint: string =
       return responseData.data
     }
     return responseData
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
+  } catch (error: any) {
+    console.error('[createUser] Error:', error)
+    
+    // Check if it's an error response from the API
+    if (error.response) {
+      const status = error.response.status
+      const data = error.response.data
+      
       let errorMessage = 'Failed to create user'
-      if (error.response?.status === 400) {
-        errorMessage = error.response?.data?.message || 'Invalid data provided'
-      } else if (error.response?.status === 409) {
+      if (status === 400) {
+        errorMessage = data?.message || data?.error || 'Invalid data provided'
+      } else if (status === 409) {
         errorMessage = 'User with this email already exists'
-      } else if (error.response?.status === 401) {
+      } else if (status === 401) {
         errorMessage = 'Unauthorized. Please log in again'
+      } else if (status === 500) {
+        errorMessage = data?.message || data?.error || 'Server error'
       }
+      
       throw {
         message: errorMessage,
-        status: error.response?.status,
-        code: error.response?.data?.code,
-      } as ApiError
+        status: status,
+        response: data,
+      }
     }
-    throw error
+    
+    // Fallback for other errors
+    throw {
+      message: error?.message || 'Failed to create user',
+      status: 500,
+    }
   }
 }
 
@@ -426,13 +490,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 /**
  * Assign subjects to a teacher
  */
-export async function assignSubjectsToTeacher(teacherId: string, subjectIds: string[]): Promise<User> {
+export async function assignSubjectsToTeacher(teacherId: string, subjectIds: string[]): Promise<any> {
   try {
-    const response = await apiClient.post<{ success: boolean; data: User }>(
-      `admin/teachers/${teacherId}/subjects`,
-      { subjectIds }
+    const response = await apiClient.post<{ success: boolean; data: any }>(
+      'academic/teacher-subject-assignments',
+      { teacherId, subjectIds }
     )
-    return response.data.data
+    return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw {
@@ -450,7 +514,8 @@ export async function assignSubjectsToTeacher(teacherId: string, subjectIds: str
 export async function getTeacherAssignedSubjects(teacherId: string): Promise<Subject[]> {
   try {
     const response = await apiClient.get<{ success: boolean; data: Subject[] }>(
-      `admin/teachers/${teacherId}/subjects`
+      `academic/teacher-subject-assignments`,
+      { params: { teacherId } }
     )
     return response.data.data || []
   } catch (error) {
