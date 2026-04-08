@@ -290,9 +290,15 @@ export const classService = {
   async getClassTeacherAssignments(): Promise<Array<{ classId: string; teacherId: string }>> {
     try {
       const response = await apiClient.get(`academic/class-teacher-assignments`);
-      const data = await handleResponse(response);
+      const result = await handleResponse(response);
+      // Handle both wrapped and unwrapped responses
+      const items = result.data || result;
+      if (!Array.isArray(items)) {
+        console.warn('[classService] getClassTeacherAssignments: data is not an array', result);
+        return [];
+      }
       // Map to simple format for easy filtering
-      return data.map((item: any) => ({
+      return items.map((item: any) => ({
         classId: item.classId || item.class?.id,
         teacherId: item.teacherId || item.teacher?.id || item.formTeacherId,
       }));
