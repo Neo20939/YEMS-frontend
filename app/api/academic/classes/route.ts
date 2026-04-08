@@ -25,7 +25,18 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
 
-    const response = await fetch(`${API_BASE_URL}/api/academic/classes`, {
+    // Forward query parameters to backend
+    const queryString = request.nextUrl.search.toString()
+    const backendUrl = queryString 
+      ? `${API_BASE_URL}/api/academic/classes?${queryString}`
+      : `${API_BASE_URL}/api/academic/classes`
+
+    console.log('[Classes API] Proxy GET to:', backendUrl)
+    console.log('[Classes API] Query params:', queryString)
+    console.log('[Classes API] Full URL:', request.nextUrl.href)
+    console.log('[Classes API] All search params:', Object.fromEntries(request.nextUrl.searchParams))
+
+    const response = await fetch(backendUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -61,6 +72,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const token = request.headers.get('authorization')
 
+    console.log('[Classes API] Creating class with body:', JSON.stringify(body, null, 2))
+
     const response = await fetch(`${API_BASE_URL}/api/academic/classes`, {
       method: 'POST',
       headers: {
@@ -76,6 +89,7 @@ export async function POST(request: NextRequest) {
 
     if (!isJson) {
       const text = await response.text()
+      console.error('[Classes API] Non-JSON response:', text)
       return NextResponse.json(
         { error: 'Backend returned invalid response format', status: response.status },
         { status: response.status }
@@ -83,6 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
+    console.log('[Classes API] Backend response:', response.status, data)
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status })

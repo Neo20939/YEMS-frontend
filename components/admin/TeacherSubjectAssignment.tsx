@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { User, Subject, getSubjects, assignSubjectsToTeacher, getTeacherAssignedSubjects } from "@/lib/api/admin-client"
+import { useState, useEffect, useRef } from "react"
+import { User, Subject, getSubjects, getTeacherAssignedSubjects } from "@/lib/api/admin-client"
+import { createTeacherSubjectAssignment, getAcademicYears, AcademicYear, getClasses, Class } from "@/lib/api/academic-client"
 
 interface TeacherSubjectAssignmentProps {
   teacher: User
@@ -14,26 +15,61 @@ export default function TeacherSubjectAssignment({
 }: TeacherSubjectAssignmentProps) {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
+  const [academicYearId, setAcademicYearId] = useState<string>("")
+  const [classes, setClasses] = useState<Class[]>([])
+  const [selectedClass, setSelectedClass] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    loadSubjectsAndAssignments()
+    loadData()
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [teacher.id])
 
-  async function loadSubjectsAndAssignments() {
+  async function loadData() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
     setIsLoading(true)
     try {
-      const [allSubjects, assignedSubjects] = await Promise.all([
+      // Load academic years, then classes and subjects in parallel
+      const [yearsData, allSubjects, classesData] = await Promise.all([
+        getAcademicYears(),
         getSubjects(),
-        getTeacherAssignedSubjects(teacher.id),
+        getClasses({ limit: 100 }),
       ])
+      
+      setAcademicYears(yearsData)
+      // Auto-select current academic year if available
+      const safeYears = Array.isArray(yearsData) ? yearsData : []
+      const currentYear = safeYears.find((y: AcademicYear) => y.isCurrent)
+      if (currentYear) {
+        setAcademicYearId(currentYear.id)
+      } else if (safeYears.length > 0) {
+        setAcademicYearId(safeYears[0].id)
+      }
+      
       setSubjects(allSubjects)
-      // Extract subject IDs from the Subject objects
+      setClasses(classesData.classes || [])
+      
+      // Get assigned subjects
+      const assignedSubjects = await getTeacherAssignedSubjects(teacher.id)
       setSelectedSubjects(assignedSubjects.map(s => s.id))
-    } catch (error) {
-      console.error('Failed to load subjects:', error)
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+        return
+      }
+      console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -49,10 +85,27 @@ export default function TeacherSubjectAssignment({
   }
 
   async function handleSave() {
+    if (!academicYearId) {
+      alert('Please select an academic year')
+      return
+    }
+
+    if (!selectedClass) {
+      alert('Please select a class')
+      return
+    }
+
     setIsSaving(true)
     try {
-      // Pass the selected subject IDs directly
-      await assignSubjectsToTeacher(teacher.id, selectedSubjects)
+      // Create a teacher subject assignment for each selected subject
+      for (const subjectId of selectedSubjects) {
+        await createTeacherSubjectAssignment({
+          teacherId: teacher.id,
+          classId: selectedClass,
+          subjectId,
+          academicYearId,
+        })
+      }
       setSaved(true)
       setTimeout(() => {
         onClose()
@@ -101,6 +154,46 @@ export default function TeacherSubjectAssignment({
             </div>
           ) : (
             <div>
+              {/* Class Selection */}
+              {classes.length > 0 && (
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Select Class
+                  </label>
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  >
+                    <option value="">Select a class...</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name} {cls.level} {cls.stream ? `(${cls.stream})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Academic Year Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Academic Year
+                </label>
+                <select
+                  value={academicYearId}
+                  onChange={(e) => setAcademicYearId(e.target.value)}
+                  className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                  <option value="">Select academic year...</option>
+                  {academicYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.name} {year.isCurrent ? '(Current)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Select subjects this teacher can manage:

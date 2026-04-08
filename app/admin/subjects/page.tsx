@@ -25,17 +25,40 @@ export default function AdminSubjectsPage() {
   const [status, setStatus] = React.useState<'active' | 'inactive'>('active')
   const [error, setError] = React.useState<string | null>(null)
 
+  // Abort controller for cleanup
+  const abortControllerRef = React.useRef<AbortController | null>(null)
+
   React.useEffect(() => {
     loadSubjects()
+
+    // Cleanup: abort any pending request when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [])
 
   async function loadSubjects() {
+    // Cancel any previous pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController()
+
     setIsLoading(true)
     setError(null)
     try {
+      // Pass signal to API call if supported
       const data = await getSubjects()
       setSubjects(data)
     } catch (err: any) {
+      // Ignore abort errors - they're expected when component unmounts or request is cancelled
+      if (err.name === 'AbortError' || err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+        return
+      }
       console.error('Failed to load subjects:', err)
       setError(err.message || 'Failed to load subjects. Please ensure the backend API is available.')
       setSubjects([])

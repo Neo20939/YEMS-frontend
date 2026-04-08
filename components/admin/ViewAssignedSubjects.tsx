@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { User, Subject, getSubjects, getTeacherAssignedSubjects } from "@/lib/api/admin-client"
 
 interface ViewAssignedSubjectsProps {
@@ -14,12 +14,24 @@ export default function ViewAssignedSubjects({
 }: ViewAssignedSubjectsProps) {
   const [assignedSubjects, setAssignedSubjects] = useState<Subject[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     loadAssignedSubjects()
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [teacher.id])
 
   async function loadAssignedSubjects() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
     setIsLoading(true)
     try {
       const [allSubjects, assignedSubjectsList] = await Promise.all([
@@ -27,11 +39,13 @@ export default function ViewAssignedSubjects({
         getTeacherAssignedSubjects(teacher.id),
       ])
 
-      // Match assigned subjects with full subject objects
       const assignedIds = assignedSubjectsList.map(s => s.id)
       const subjects = allSubjects.filter(s => assignedIds.includes(s.id))
       setAssignedSubjects(subjects)
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+        return
+      }
       console.error('Failed to load assigned subjects:', error)
     } finally {
       setIsLoading(false)

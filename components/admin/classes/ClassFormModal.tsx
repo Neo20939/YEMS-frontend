@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Input, Select, Button } from "@/components/ui";
 import type { Class, ClassCreateInput, ClassUpdateInput, ClassLevel, ClassStream } from "@/types/class";
+import { getClassLevels, getAcademicYears, getCurrentAcademicYear, ClassLevel as ApiClassLevel, AcademicYear } from "@/lib/api/academic-client";
 
 interface ClassFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: ClassCreateInput | ClassUpdateInput) => Promise<void>;
+  onSubmit: (data: any) => Promise<void>;
   classToEdit?: Class | null;
   academicYears?: string[];
   teachers?: Array<{ id: string; name: string; email: string }>;
@@ -29,32 +30,59 @@ const STREAMS: { value: ClassStream; label: string }[] = [
   { value: "Commercial", label: "Commercial" },
 ];
 
-export function ClassFormModal({
+export default function ClassFormModal({
   isOpen,
   onClose,
   onSubmit,
   classToEdit,
-  academicYears = ["2024/2025", "2023/2024", "2022/2023"],
+  academicYears: propAcademicYears,
   teachers = [],
-  loading = false,
+  loading,
 }: ClassFormModalProps) {
-  const isEditMode = !!classToEdit;
-
-  // Form state
   const [className, setClassName] = useState("");
   const [academicYear, setAcademicYear] = useState("");
   const [level, setLevel] = useState<ClassLevel | "">("");
   const [stream, setStream] = useState<ClassStream | "">("");
   const [maxCapacity, setMaxCapacity] = useState("");
   const [formTeacherId, setFormTeacherId] = useState("");
+  
+  // API data for transformation
+  const [classLevels, setClassLevels] = useState<ApiClassLevel[]>([]);
+  const [academicYearsData, setAcademicYearsData] = useState<AcademicYear[]>([]);
 
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Determine if we're in edit mode
+  const isEditMode = !!classToEdit;
+
   // Track previous isOpen state to detect opening transitions
   const prevIsOpenRef = React.useRef<boolean>(isOpen);
+
+  // Fetch class levels and academic years
+  useEffect(() => {
+    async function loadApiData() {
+      try {
+        const [levels, years] = await Promise.all([
+          getClassLevels(),
+          getAcademicYears()
+        ]);
+        // Handle both array response and object response { data: [...] }
+        setClassLevels(Array.isArray(levels) ? levels : levels?.data || []);
+        const yearsData = Array.isArray(years) ? years : years?.data || [];
+        setAcademicYearsData(yearsData);
+      } catch (error) {
+        console.error('Failed to load class levels or academic years:', error);
+        setClassLevels([]);
+        setAcademicYearsData([]);
+      }
+    }
+    if (isOpen) {
+      loadApiData();
+    }
+  }, [isOpen]);
 
   // Populate form when editing or when modal opens
   useEffect(() => {
@@ -70,7 +98,7 @@ export function ClassFormModal({
       } else {
         // Reset form for create mode - use stable default
         setClassName("");
-        setAcademicYear(academicYears[0] || "2024/2025");
+        setAcademicYear(propAcademicYears?.[0] || "2024/2025");
         setLevel("");
         setStream("");
         setMaxCapacity("40");
@@ -80,7 +108,7 @@ export function ClassFormModal({
       setTouched({});
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen, classToEdit]); // Removed academicYears from dependencies
+  }, [isOpen, classToEdit, propAcademicYears]);
 
   // Validate field
   const validateField = useCallback((field: string, value: string) => {
@@ -161,13 +189,27 @@ export function ClassFormModal({
     setIsSubmitting(true);
 
     try {
+      // Find the classLevelId from the selected level (match by partial name or code)
+      const selectedLevel = classLevels.find(l => 
+        l.name?.includes(level.replace('JSS', '').replace('SS', '')) || 
+        l.name === level
+      );
+      
+      const selectedYear = academicYearsData.find(y => 
+        y.name === academicYear || y.name?.includes(academicYear.split('/')[0])
+      );
+
+      // Transform to backend API format with classLevelId and academicYearId
       const data = {
-        class_name: className.trim(),
-        academic_year: academicYear,
+        name: className.trim(),
         level: level as ClassLevel,
         stream: stream as ClassStream,
+        academic_year: academicYear,
         max_capacity: parseInt(maxCapacity, 10),
-        form_teacher_id: formTeacherId,
+        form_teacher_id: formTeacherId || undefined,
+        // Add classLevelId and academicYearId for the API
+        classLevelId: selectedLevel?.id || "",
+        academicYearId: selectedYear?.id || "",
       };
 
       await onSubmit(data);
@@ -243,7 +285,7 @@ export function ClassFormModal({
         {/* Academic Year */}
         <Select
           label="Academic Year"
-          options={academicYears.map((year) => ({ value: year, label: year }))}
+          options={academicYearsData.map((year) => ({ value: year.name, label: year.name, description: year.isCurrent ? 'Current' : undefined }))}
           value={academicYear}
           onChange={(value) => setAcademicYear(value as string)}
           placeholder="Select academic year"
@@ -336,5 +378,3 @@ export function ClassFormModal({
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
-
-export default ClassFormModal;

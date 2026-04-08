@@ -19,7 +19,7 @@ import type {
   ClassLevel as LevelType,
 } from '@/types/class';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev';
+const API_BASE_URL = '/api'; // Use Next.js API proxy routes
 
 // Helper to handle API errors
 class ApiError extends Error {
@@ -35,10 +35,30 @@ class ApiError extends Error {
 }
 
 async function handleResponse<T>(response: any): Promise<T> {
-  if (!response.data.success) {
-    throw new ApiError(400, 'API request failed');
+  console.log('[handleResponse] response.data:', JSON.stringify(response.data, null, 2).substring(0, 500))
+  
+  // Check for success flag in response
+  if (response.data && response.data.success === false) {
+    const errorMsg = response.data.message || response.data.error || 'API request failed';
+    throw new ApiError(response.status || 400, errorMsg);
   }
-  return response.data.data;
+  
+  // If response has a data property with pagination (success: true, data: [...], pagination: {...})
+  if (response.data && response.data.success === true && response.data.data) {
+    return response.data;
+  }
+  
+  // If response has a data property, return it - could be wrapped or raw
+  if (response.data && response.data.data) {
+    return response.data.data;
+  }
+  
+  // If response IS the data directly
+  if (response.data) {
+    return response.data;
+  }
+
+  return response;
 }
 
 // Get auth token from storage
@@ -86,26 +106,47 @@ export const classService = {
     if (filters.stream) params.append('stream', filters.stream);
     if (filters.status) params.append('status', filters.status);
     if (filters.academic_year) params.append('academicYearId', filters.academic_year);
-    if (filters.form_teacher_id) params.append('formTeacherId', filters.form_teacher_id);
+    if (filters.form_teacher_id) {
+      console.log('[getClasses] Adding formTeacherId filter:', filters.form_teacher_id);
+      params.append('formTeacherId', filters.form_teacher_id);
+      // Also try teacherId as alternative
+      params.append('teacherId', filters.form_teacher_id);
+      // Also try form_teacher_id
+      params.append('form_teacher_id', filters.form_teacher_id);
+    }
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.sort) params.append('sort', filters.sort);
     if (filters.order) params.append('order', filters.order);
 
-    const response = await apiClient.get(`api/academic/classes`, { params });
+    console.log('[getClasses] Calling API with params:', params.toString())
+    console.log('[getClasses] Full URL will be:', `/academic/classes?${params.toString()}`)
+    const response = await apiClient.get(`academic/classes`, { params });
+    console.log('[getClasses] Response:', response)
+    console.log('[getClasses] Number of classes returned:', response.data?.data?.length || 0)
+    console.log('[getClasses] Full first class object:', JSON.stringify(response.data?.data?.[0], null, 2))
     return handleResponse(response);
   },
 
   // Get single class by ID
   async getClassById(classId: string): Promise<Class> {
-    const response = await apiClient.get(`api/academic/classes/${classId}`);
+    const response = await apiClient.get(`academic/classes/${classId}`);
     return handleResponse(response);
   },
 
   // Create new class
   async createClass(input: ClassCreateInput & { classLevelId: string; academicYearId: string }): Promise<Class> {
-    const response = await apiClient.post(`api/academic/classes`, input);
-    return handleResponse(response);
+    console.log('[createClass] Input:', JSON.stringify(input, null, 2))
+    try {
+      const response = await apiClient.post(`academic/classes`, input);
+      console.log('[createClass] Response:', response)
+      return handleResponse(response);
+    } catch (error: any) {
+      // Log the full error response from backend
+      console.error('[createClass] Error response:', error.response?.data)
+      console.error('[createClass] Error status:', error.response?.status)
+      throw error;
+    }
   },
 
   // Update class
@@ -113,25 +154,25 @@ export const classService = {
     classId: string,
     input: ClassUpdateInput
   ): Promise<Class> {
-    const response = await apiClient.put(`api/academic/classes/${classId}`, input);
+    const response = await apiClient.put(`academic/classes/${classId}`, input);
     return handleResponse(response);
   },
 
   // Delete class
   async deleteClass(classId: string): Promise<{ message: string }> {
-    const response = await apiClient.delete(`api/academic/classes/${classId}`);
+    const response = await apiClient.delete(`academic/classes/${classId}`);
     return handleResponse(response);
   },
 
   // Get class details (includes students, subjects, timetable)
   async getClassDetails(classId: string): Promise<ClassDetails> {
-    const response = await apiClient.get(`api/academic/classes/${classId}/details`);
+    const response = await apiClient.get(`academic/classes/${classId}/details`);
     return handleResponse(response);
   },
 
   // Get class students
   async getClassStudents(classId: string): Promise<StudentEnrollment[]> {
-    const response = await apiClient.get(`api/academic/classes/${classId}/students`);
+    const response = await apiClient.get(`academic/classes/${classId}/students`);
     return handleResponse(response);
   },
 
@@ -140,12 +181,12 @@ export const classService = {
     classId: string,
     input: ClassSubjectInput
   ): Promise<ClassSubject> {
-    const response = await apiClient.post(`api/academic/classes/${classId}/subjects`, input);
+    const response = await apiClient.post(`academic/classes/${classId}/subjects`, input);
     return handleResponse(response);
   },
 
   async getClassSubjects(classId: string): Promise<ClassSubject[]> {
-    const response = await apiClient.get(`api/academic/classes/${classId}/subjects`);
+    const response = await apiClient.get(`academic/classes/${classId}/subjects`);
     return handleResponse(response);
   },
 
@@ -155,7 +196,7 @@ export const classService = {
     input: Partial<ClassSubjectInput>
   ): Promise<ClassSubject> {
     const response = await apiClient.put(
-      `api/academic/classes/${classId}/subjects/${subjectId}`,
+      `academic/classes/${classId}/subjects/${subjectId}`,
       input
     );
     return handleResponse(response);
@@ -166,14 +207,14 @@ export const classService = {
     subjectId: string
   ): Promise<{ message: string }> {
     const response = await apiClient.delete(
-      `api/academic/classes/${classId}/subjects/${subjectId}`
+      `academic/classes/${classId}/subjects/${subjectId}`
     );
     return handleResponse(response);
   },
 
   // Timetable Management
   async getTimetable(classId: string): Promise<TimetableSlot[]> {
-    const response = await apiClient.get(`api/academic/classes/${classId}/timetable`);
+    const response = await apiClient.get(`academic/classes/${classId}/timetable`);
     return handleResponse(response);
   },
 
@@ -181,7 +222,7 @@ export const classService = {
     classId: string,
     input: TimetableSlotInput
   ): Promise<TimetableSlot> {
-    const response = await apiClient.post(`api/academic/classes/${classId}/timetable`, input);
+    const response = await apiClient.post(`academic/classes/${classId}/timetable`, input);
     return handleResponse(response);
   },
 
@@ -191,7 +232,7 @@ export const classService = {
     input: Partial<TimetableSlotInput>
   ): Promise<TimetableSlot> {
     const response = await apiClient.put(
-      `api/academic/classes/${classId}/timetable/${slotId}`,
+      `academic/classes/${classId}/timetable/${slotId}`,
       input
     );
     return handleResponse(response);
@@ -202,7 +243,7 @@ export const classService = {
     slotId: string
   ): Promise<{ message: string }> {
     const response = await apiClient.delete(
-      `api/academic/classes/${classId}/timetable/${slotId}`
+      `academic/classes/${classId}/timetable/${slotId}`
     );
     return handleResponse(response);
   },
@@ -212,14 +253,14 @@ export const classService = {
     classId: string,
     input: EnrollmentInput
   ): Promise<StudentEnrollment> {
-    const response = await apiClient.post(`api/academic/classes/${classId}/enrollments`, input);
+    const response = await apiClient.post(`academic/classes/${classId}/enrollments`, input);
     return handleResponse(response);
   },
 
   async getClassEnrollments(
     classId: string
   ): Promise<StudentEnrollment[]> {
-    const response = await apiClient.get(`api/academic/classes/${classId}/enrollments`);
+    const response = await apiClient.get(`academic/classes/${classId}/enrollments`);
     return handleResponse(response);
   },
 
@@ -228,20 +269,20 @@ export const classService = {
     studentId: string
   ): Promise<{ message: string }> {
     const response = await apiClient.delete(
-      `api/academic/classes/${classId}/enrollments/${studentId}`
+      `academic/classes/${classId}/enrollments/${studentId}`
     );
     return handleResponse(response);
   },
 
   // Activity History
   async getClassHistory(classId: string): Promise<ClassActivity[]> {
-    const response = await apiClient.get(`api/academic/classes/${classId}/history`);
+    const response = await apiClient.get(`academic/classes/${classId}/history`);
     return handleResponse(response);
   },
 
   // Helper: Get all academic years
   async getAcademicYears(): Promise<AcademicYear[]> {
-    const response = await apiClient.get(`api/academic/academic-years`);
+    const response = await apiClient.get(`academic/academic-years`);
     return handleResponse(response);
   },
 
@@ -274,7 +315,7 @@ export const subjectService = {
     if (params?.search) queryParams.append('search', params.search);
     if (params?.active !== undefined) queryParams.append('active', params.active.toString());
 
-    const response = await apiClient.get(`api/academic/subjects?${queryParams}`);
+    const response = await apiClient.get(`academic/subjects?${queryParams}`);
     return handleResponse(response);
   },
 
@@ -292,7 +333,7 @@ export const subjectService = {
     isActive: boolean;
     isGeneral: boolean;
   }> {
-    const response = await apiClient.post(`api/academic/subjects`, input);
+    const response = await apiClient.post(`academic/subjects`, input);
     return handleResponse(response);
   },
 
@@ -305,7 +346,7 @@ export const subjectService = {
     isActive: boolean;
     isGeneral: boolean;
   }> {
-    const response = await apiClient.get(`api/academic/subjects/${subjectId}`);
+    const response = await apiClient.get(`academic/subjects/${subjectId}`);
     return handleResponse(response);
   },
 
@@ -327,13 +368,13 @@ export const subjectService = {
     isActive: boolean;
     isGeneral: boolean;
   }> {
-    const response = await apiClient.put(`api/academic/subjects/${subjectId}`, input);
+    const response = await apiClient.put(`academic/subjects/${subjectId}`, input);
     return handleResponse(response);
   },
 
   // Delete subject
   async deleteSubject(subjectId: string): Promise<{ message: string }> {
-    const response = await apiClient.delete(`api/academic/subjects/${subjectId}`);
+    const response = await apiClient.delete(`academic/subjects/${subjectId}`);
     return handleResponse(response);
   },
 };

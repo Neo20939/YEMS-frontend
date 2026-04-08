@@ -5,14 +5,16 @@ import { useClasses } from "@/hooks/useClasses";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { ClassesTable } from "@/components/admin/classes/ClassesTable";
 import { ClassFiltersBar } from "@/components/admin/classes/ClassFiltersBar";
-import { ClassFormModal } from "@/components/admin/classes/ClassFormModal";
+import ClassFormModal from "@/components/admin/classes/ClassFormModal";
 import { Pagination, Button, ToastContainer, useToast } from "@/components/ui";
 import { Plus, Archive, Trash2, Download } from "lucide-react";
 import type { Class } from "@/types/class";
 import classService from "@/lib/classService";
 import { getUsers, User } from "@/lib/api/admin-client";
+import { getAcademicYears, AcademicYear } from "@/lib/api/academic-client";
 
 export default function ClassesListPage() {
+  const [academicYearsList, setAcademicYearsList] = useState<AcademicYear[]>([]);
   const {
     classes,
     classFilters,
@@ -46,8 +48,8 @@ export default function ClassesListPage() {
   const [teachers, setTeachers] = useState<Array<{ id: string; name: string; email: string }>>([]);
 
   useEffect(() => {
-    // Fetch teachers for dropdown
-    const fetchTeachers = async () => {
+    // Fetch teachers and academic years for dropdowns
+    const fetchData = async () => {
       try {
         // Fetch teachers from admin users API
         const users = await getUsers();
@@ -63,8 +65,12 @@ export default function ClassesListPage() {
             email: t.email,
           }));
         setTeachers(teacherUsers);
+
+        // Fetch academic years from API
+        const years = await getAcademicYears();
+        setAcademicYearsList(Array.isArray(years) ? years : years?.data || []);
       } catch (error) {
-        console.error("Failed to fetch teachers:", error);
+        console.error("Failed to fetch data:", error);
         // Fallback to mock data if API fails
         const mockTeachers = [
           { id: "1", name: "John Doe", email: "john.doe@school.edu" },
@@ -72,21 +78,31 @@ export default function ClassesListPage() {
           { id: "3", name: "Mike Johnson", email: "mike.johnson@school.edu" },
         ];
         setTeachers(mockTeachers);
+        setAcademicYearsList([]);
       }
     };
 
-    fetchTeachers();
+    fetchData();
   }, []);
 
-  // Fetch classes when filters change
+  // Fetch classes when filters change or page changes
   useEffect(() => {
-    fetchClasses({
+    console.log('[ClassesListPage] useEffect triggered', { 
+      classFilters, 
+      currentPage: pagination.currentPage,
+      sortKey,
+      sortOrder 
+    })
+    const fetchParams = {
       ...classFilters,
       page: pagination.currentPage,
       sort: sortKey,
       order: sortOrder,
-    });
-  }, [classFilters, pagination.currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+    };
+    console.log('[ClassesListPage] Calling fetchClasses with:', fetchParams)
+    fetchClasses(fetchParams);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.currentPage, classFilters]);
 
   // Handle create/edit submit
   const handleSubmitClass = async (data: any) => {
@@ -298,7 +314,7 @@ export default function ClassesListPage() {
           onFilterChange={setFilters}
           onClearFilters={clearFilters}
           onExport={handleExport}
-          academicYears={["2024/2025", "2023/2024", "2022/2023"]}
+          academicYears={academicYearsList.map(y => y.name)}
           teachers={teachers}
         />
 

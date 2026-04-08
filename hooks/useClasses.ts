@@ -120,18 +120,34 @@ export function useClasses(): UseClassesReturn {
       setError(null);
 
       try {
-        const page = filters?.page || pagination.currentPage;
-        const appliedFilters = { ...classFilters, ...filters };
+        const page = filters?.page || 1;
         const result = await classService.getClasses({
-          ...appliedFilters,
+          ...filters,
           page,
-          limit: pagination.pageSize,
+          limit: filters?.pageSize || pagination.pageSize,
         });
 
         if (result.success) {
-          setClasses(result.data);
+          // Map backend response to frontend Class type
+          const mappedClasses = result.data.map((c: any) => ({
+            id: c.id,
+            class_name: c.name,
+            class_code: c.name, // Use name as code fallback
+            level: c.classLevelName?.replace('JSS ', '').replace('SS ', '') as any || c.classLevelName,
+            stream: 'Science' as any, // Default stream since backend doesn't have it
+            academic_year: c.academicYearName || '',
+            max_capacity: c.capacity || 0,
+            form_teacher_id: c.formTeacherId,
+            form_teacher_name: c.formTeacherName,
+            status: c.isActive ? 'active' : 'archived',
+            enrolled_count: c.enrolledCount || 0,
+            created_at: c.createdAt,
+            updated_at: c.updatedAt,
+          }));
+          setClasses(mappedClasses);
           setPagination(result.pagination);
-          setClassFilters(appliedFilters);
+          // Don't set classFilters here - it causes infinite loop
+          // The filters are passed from the component, we don't need to store them
         }
       } catch (err: unknown) {
         const errorMessage =
@@ -142,11 +158,12 @@ export function useClasses(): UseClassesReturn {
         setLoading(false);
       }
     },
-    [classFilters, pagination.currentPage, pagination.pageSize, toast]
+    [pagination.pageSize, toast]
   );
 
   // Set filters
   const setFilters = useCallback((filters: Partial<ClassFilters>) => {
+    console.log('[useClasses] setFilters called with:', filters)
     setClassFilters((prev) => ({ ...prev, ...filters }));
     setPagination((prev) => ({ ...prev, currentPage: 1 })); // Reset to first page
   }, []);

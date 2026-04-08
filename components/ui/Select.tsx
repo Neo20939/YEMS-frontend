@@ -158,17 +158,24 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             </span>
             <div className="flex items-center gap-2">
               {clearable && selectedOption && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="iconSm"
-                  onClick={handleClear}
-                  className="h-6 w-6"
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleClear()
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation()
+                      handleClear()
+                    }
+                  }}
+                  className="h-6 w-6 inline-flex items-center justify-center text-slate-400 hover:text-slate-600 cursor-pointer"
                   aria-label="Clear selection"
                 >
-                  <span className="sr-only">Clear</span>
-                  <span className="text-slate-400">×</span>
-                </Button>
+                  ×
+                </span>
               )}
               <ChevronDown
                 className={cn(

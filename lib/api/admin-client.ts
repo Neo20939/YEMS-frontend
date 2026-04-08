@@ -493,8 +493,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 export async function assignSubjectsToTeacher(teacherId: string, subjectIds: string[]): Promise<any> {
   try {
     const response = await apiClient.post<{ success: boolean; data: any }>(
-      'academic/teacher-subject-assignments',
-      { teacherId, subjectIds }
+      `admin/users/${teacherId}/assign-subjects`,
+      { subjectIds }
     )
     return response.data
   } catch (error) {
@@ -510,22 +510,41 @@ export async function assignSubjectsToTeacher(teacherId: string, subjectIds: str
 
 /**
  * Get teacher's assigned subjects
+ * Uses academic API to get teacher subject assignments
  */
 export async function getTeacherAssignedSubjects(teacherId: string): Promise<Subject[]> {
   try {
-    const response = await apiClient.get<{ success: boolean; data: Subject[] }>(
-      `academic/teacher-subject-assignments`,
-      { params: { teacherId } }
-    )
-    return response.data.data || []
+    // Import the academic client functions dynamically to avoid circular imports
+    const { getTeacherSubjectAssignments, getSubjects } = await import('./academic-client')
+    
+    // Get all teacher subject assignments for this teacher
+    const assignments = await getTeacherSubjectAssignments()
+    // Ensure assignments is an array before filtering
+    const teacherAssignments = Array.isArray(assignments) 
+      ? assignments.filter((a: any) => a.teacherId === teacherId)
+      : []
+    
+    // Get all subjects to match with assignments
+    const allSubjects = await getSubjects()
+    
+    // Ensure allSubjects is an array before filtering
+    const safeAllSubjects = Array.isArray(allSubjects) ? allSubjects : []
+    
+    // Map assignments to subjects - filter by unique subject IDs
+    const assignedSubjectIds = [...new Set(teacherAssignments.map((a: any) => a.subjectId))]
+    const assignedSubjects = safeAllSubjects.filter((s: any) => assignedSubjectIds.includes(s.id))
+    
+    // Convert to Subject format expected by admin-client
+    return assignedSubjects.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      description: s.description,
+      status: s.isActive ? 'active' : 'inactive',
+    }))
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Failed to fetch teacher subjects:', error.response?.data)
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch teacher subjects',
-        status: error.response?.status,
-      } as ApiError
-    }
-    throw error
+    console.error('Failed to fetch teacher subjects:', error)
+    // Return empty array on error instead of throwing
+    return []
   }
 }

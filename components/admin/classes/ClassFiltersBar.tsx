@@ -68,6 +68,7 @@ export function ClassFiltersBar({
 
   const handleTeacherChange = useCallback(
     (value: string | number) => {
+      console.log('[ClassFiltersBar] Teacher changed:', value)
       onFilterChange({ form_teacher_id: (value as string) || undefined });
     },
     [onFilterChange]

@@ -3,6 +3,7 @@
 import * as React from "react"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { cn } from "@/lib/utils"
+import { getAcademicYears, getCurrentAcademicYear, AcademicYear } from "@/lib/api/academic-client"
 
 type TabType = 'general' | 'email' | 'security' | 'appearance' | 'notifications' | 'backup'
 
@@ -126,6 +127,31 @@ export default function SystemSettingsPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
   const [hasChanges, setHasChanges] = React.useState(false)
+  const [academicYearsList, setAcademicYearsList] = React.useState<AcademicYear[]>([])
+  const [currentAcademicYear, setCurrentAcademicYear] = React.useState<AcademicYear | null>(null)
+  
+  // Fetch academic years on mount
+  React.useEffect(() => {
+    async function fetchAcademicData() {
+      try {
+        const [years, currentYear] = await Promise.all([
+          getAcademicYears(),
+          getCurrentAcademicYear()
+        ])
+        const yearsData = Array.isArray(years) ? years : years?.data || []
+        setAcademicYearsList(yearsData)
+        setCurrentAcademicYear(currentYear)
+        
+        // Set initial academic year to current if available
+        if (currentYear && !settings.academicYear) {
+          setSettings(prev => ({ ...prev, academicYear: currentYear.name }))
+        }
+      } catch (error) {
+        console.error('Failed to fetch academic years:', error)
+      }
+    }
+    fetchAcademicData()
+  }, [])
   
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'general', label: 'General', icon: 'settings' },
@@ -251,13 +277,21 @@ export default function SystemSettingsPage() {
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                   Academic Year
                 </label>
-                <input
-                  type="text"
+                <select
                   value={settings.academicYear}
                   onChange={(e) => handleSettingChange('academicYear', e.target.value)}
-                  placeholder="e.g., 2025/2026"
                   className="w-full bg-stone-100 dark:bg-stone-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
-                />
+                >
+                  {academicYearsList.length > 0 ? (
+                    academicYearsList.map((year) => (
+                      <option key={year.id} value={year.name}>
+                        {year.name} {year.isCurrent ? '(Current)' : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">{settings.academicYear || 'No academic years available'}</option>
+                  )}
+                </select>
               </div>
             </div>
           </div>
