@@ -6,7 +6,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { ClassesTable } from "@/components/admin/classes/ClassesTable";
 import { ClassFiltersBar } from "@/components/admin/classes/ClassFiltersBar";
 import ClassFormModal from "@/components/admin/classes/ClassFormModal";
-import { Pagination, Button, ToastContainer, useToast } from "@/components/ui";
+import { Pagination, Button, ToastContainer, useToast, Modal, Select } from "@/components/ui";
 import { Plus, Archive, Trash2, Download } from "lucide-react";
 import type { Class } from "@/types/class";
 import classService from "@/lib/classService";
@@ -49,6 +49,10 @@ export default function ClassesListPage() {
   
   // Class teacher assignments for frontend filtering
   const [classTeacherAssignments, setClassTeacherAssignments] = useState<Array<{ classId: string; teacherId: string }>>([]);
+  
+  // Assign form teacher modal
+  const [isAssignTeacherModalOpen, setIsAssignTeacherModalOpen] = useState(false);
+  const [classForTeacherAssignment, setClassForTeacherAssignment] = useState<Class | null>(null);
 
   // Compute filtered classes for teacher filter (backend doesn't support formTeacherId filter)
   // Must be defined before any callbacks that use it
@@ -268,6 +272,37 @@ export default function ClassesListPage() {
     window.location.href = `/admin/classes/${classItem.id}/enrollment`;
   };
 
+  const handleAssignFormTeacher = (classItem: Class) => {
+    setClassForTeacherAssignment(classItem);
+    setIsAssignTeacherModalOpen(true);
+  };
+
+  const handleSaveFormTeacher = async (teacherId: string) => {
+    if (!classForTeacherAssignment || !academicYearsList[0]) return;
+    
+    setIsSubmitting(true);
+    try {
+      await classService.createClassTeacherAssignment({
+        classId: classForTeacherAssignment.id,
+        teacherId,
+        academicYearId: academicYearsList[0].id,
+      });
+      toast.success('Form teacher assigned successfully');
+      
+      // Refresh assignments
+      const assignments = await classService.getClassTeacherAssignments();
+      setClassTeacherAssignments(assignments);
+      
+      setIsAssignTeacherModalOpen(false);
+      setClassForTeacherAssignment(null);
+    } catch (error) {
+      console.error('Failed to assign form teacher:', error);
+      toast.error('Failed to assign form teacher');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -348,6 +383,7 @@ export default function ClassesListPage() {
           onManageSubjects={handleManageSubjects}
           onViewTimetable={handleViewTimetable}
           onManageEnrollment={handleManageEnrollment}
+          onAssignFormTeacher={handleAssignFormTeacher}
           selectedRows={selectedRows}
           onRowSelect={handleRowSelect}
           onSelectAll={handleSelectAll}
@@ -380,6 +416,44 @@ export default function ClassesListPage() {
           teachers={teachers}
           loading={isSubmitting}
         />
+
+        {/* Assign Form Teacher Modal */}
+        <Modal
+          isOpen={isAssignTeacherModalOpen}
+          onClose={() => {
+            setIsAssignTeacherModalOpen(false);
+            setClassForTeacherAssignment(null);
+          }}
+          title="Assign Form Teacher"
+          description={`Select a teacher for ${classForTeacherAssignment?.class_name || 'this class'}`}
+          size="sm"
+        >
+          <div className="space-y-4">
+            <Select
+              label="Select Teacher"
+              options={[
+                { value: "", label: "Choose a teacher..." },
+                ...teachers.map(t => ({ value: t.id, label: t.name })),
+              ]}
+              value=""
+              onChange={(value) => {
+                if (value) handleSaveFormTeacher(value as string);
+              }}
+              placeholder="Select teacher"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAssignTeacherModalOpen(false);
+                  setClassForTeacherAssignment(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
 
       {/* Toast notifications */}

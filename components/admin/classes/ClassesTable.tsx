@@ -4,7 +4,7 @@ import React from "react";
 import { Table, Badge, Button } from "@/components/ui";
 import type { Class, ClassLevel, ClassStream, ClassStatus } from "@/types/class";
 import type { Column } from "@/components/ui/Table";
-import { MoreVertical, Eye, Pencil, Copy, Archive, Trash2, BookOpen, CalendarDays, Users } from "lucide-react";
+import { MoreVertical, Eye, Pencil, Copy, Archive, Trash2, BookOpen, CalendarDays, Users, User } from "lucide-react";
 
 interface ClassesTableProps {
   classes: Class[];
@@ -17,6 +17,7 @@ interface ClassesTableProps {
   onManageSubjects?: (classItem: Class) => void;
   onViewTimetable?: (classItem: Class) => void;
   onManageEnrollment?: (classItem: Class) => void;
+  onAssignFormTeacher?: (classItem: Class) => void;
   selectedRows?: Set<string>;
   onRowSelect?: (id: string | number, selected: boolean) => void;
   onSelectAll?: (selected: boolean) => void;
@@ -36,6 +37,7 @@ export function ClassesTable({
   onManageSubjects,
   onViewTimetable,
   onManageEnrollment,
+  onAssignFormTeacher,
   selectedRows,
   onRowSelect,
   onSelectAll,
@@ -206,6 +208,15 @@ export function ClassesTable({
                   >
                     <Users className="w-4 h-4" />
                     Manage Enrollment
+                  </button>
+                )}
+                {onAssignFormTeacher && (
+                  <button
+                    onClick={() => handleAction(() => onAssignFormTeacher(item), item.id)}
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    Assign Form Teacher
                   </button>
                 )}
                 <div className="border-t border-stone-200 dark:border-stone-800" />

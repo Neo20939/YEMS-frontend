@@ -25,7 +25,16 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
 
-    const response = await fetch(`${API_BASE_URL}/api/academic/class-teacher-assignments`, {
+    // Forward query parameters to backend
+    const queryString = request.nextUrl.search.toString()
+    const backendUrl = queryString 
+      ? `${API_BASE_URL}/api/academic/class-teacher-assignments?${queryString}`
+      : `${API_BASE_URL}/api/academic/class-teacher-assignments`
+
+    console.log('[Class Teacher Assignments API] Proxy GET to:', backendUrl)
+    console.log('[Class Teacher Assignments API] Query params:', queryString)
+
+    const response = await fetch(backendUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',

@@ -302,6 +302,23 @@ export const classService = {
     }
   },
 
+  // Create a class teacher assignment
+  async createClassTeacherAssignment(input: {
+    classId: string;
+    teacherId: string;
+    academicYearId: string;
+  }): Promise<{ id: string; classId: string; teacherId: string; academicYearId: string }> {
+    console.log('[classService] Creating class teacher assignment:', input);
+    const response = await apiClient.post(`academic/class-teacher-assignments`, input);
+    return handleResponse(response);
+  },
+
+  // Delete a class teacher assignment
+  async deleteClassTeacherAssignment(assignmentId: string): Promise<{ message: string }> {
+    const response = await apiClient.delete(`academic/class-teacher-assignments/${assignmentId}`);
+    return handleResponse(response);
+  },
+
   // Helper: Get available levels (JSS1, JSS2, etc.)
   async getLevels(): Promise<LevelType[]> {
     // Backend returns levels as part of classes or as a separate endpoint
