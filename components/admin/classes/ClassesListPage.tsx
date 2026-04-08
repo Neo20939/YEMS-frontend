@@ -46,6 +46,9 @@ export default function ClassesListPage() {
 
   // Mock teachers data - replace with actual API call
   const [teachers, setTeachers] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  
+  // Class teacher assignments for frontend filtering
+  const [classTeacherAssignments, setClassTeacherAssignments] = useState<Array<{ classId: string; teacherId: string }>>([]);
 
   useEffect(() => {
     // Fetch teachers and academic years for dropdowns
@@ -69,6 +72,11 @@ export default function ClassesListPage() {
         // Fetch academic years from API
         const years = await getAcademicYears();
         setAcademicYearsList(Array.isArray(years) ? years : years?.data || []);
+
+        // Fetch class teacher assignments for frontend filtering
+        const assignments = await classService.getClassTeacherAssignments();
+        console.log('[ClassesListPage] Class teacher assignments:', assignments);
+        setClassTeacherAssignments(assignments);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         // Fallback to mock data if API fails
@@ -138,11 +146,11 @@ export default function ClassesListPage() {
 
   const handleSelectAll = useCallback((selected: boolean) => {
     if (selected) {
-      setSelectedRows(new Set(classes.map((c) => c.id)));
+      setSelectedRows(new Set(displayClasses.map((c) => c.id)));
     } else {
       setSelectedRows(new Set());
     }
-  }, [classes]);
+  }, [displayClasses]);
 
   // Handle sort
   const handleSort = useCallback((key: string, order: "asc" | "desc") => {
@@ -250,6 +258,15 @@ export default function ClassesListPage() {
     window.location.href = `/admin/classes/${classItem.id}/enrollment`;
   };
 
+  // Compute filtered classes for teacher filter (backend doesn't support formTeacherId filter)
+  const displayClasses = classFilters.form_teacher_id
+    ? classes.filter(c => 
+        classTeacherAssignments.some(
+          a => a.classId === c.id && a.teacherId === classFilters.form_teacher_id
+        )
+      )
+    : classes;
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -320,7 +337,7 @@ export default function ClassesListPage() {
 
         {/* Table */}
         <ClassesTable
-          classes={classes}
+          classes={displayClasses}
           loading={loading}
           onEdit={handleEdit}
           onView={handleView}
@@ -339,7 +356,7 @@ export default function ClassesListPage() {
         />
 
         {/* Pagination */}
-        {!loading && classes.length > 0 && (
+        {!loading && displayClasses.length > 0 && (
           <Pagination
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

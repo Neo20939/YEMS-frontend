@@ -286,6 +286,22 @@ export const classService = {
     return handleResponse(response);
   },
 
+  // Helper: Get class teacher assignments for frontend filtering
+  async getClassTeacherAssignments(): Promise<Array<{ classId: string; teacherId: string }>> {
+    try {
+      const response = await apiClient.get(`academic/class-teacher-assignments`);
+      const data = await handleResponse(response);
+      // Map to simple format for easy filtering
+      return data.map((item: any) => ({
+        classId: item.classId || item.class?.id,
+        teacherId: item.teacherId || item.teacher?.id || item.formTeacherId,
+      }));
+    } catch (error) {
+      console.error('[classService] Failed to get class teacher assignments:', error);
+      return [];
+    }
+  },
+
   // Helper: Get available levels (JSS1, JSS2, etc.)
   async getLevels(): Promise<LevelType[]> {
     // Backend returns levels as part of classes or as a separate endpoint
