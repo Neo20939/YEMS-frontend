@@ -34,11 +34,13 @@ export default function ViewAssignedSubjects({
 
     setIsLoading(true)
     try {
-      const [allSubjects, assignedSubjectsList] = await Promise.all([
+      const [subjectsResult, assignedSubjectsList] = await Promise.all([
         getSubjects(),
         getTeacherAssignedSubjects(teacher.id),
       ])
 
+      // Handle wrapped response
+      const allSubjects = Array.isArray(subjectsResult) ? subjectsResult : (subjectsResult?.data || [])
       const assignedIds = assignedSubjectsList.map(s => s.id)
       const subjects = allSubjects.filter(s => assignedIds.includes(s.id))
       setAssignedSubjects(subjects)

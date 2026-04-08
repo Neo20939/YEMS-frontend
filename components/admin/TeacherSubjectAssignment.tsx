@@ -46,21 +46,27 @@ export default function TeacherSubjectAssignment({
       const [yearsData, allSubjects, classesData] = await Promise.all([
         getAcademicYears(),
         getSubjects(),
-        getClasses({ limit: 100 }),
+        getClasses(),
       ])
       
-      setAcademicYears(yearsData)
+      // Handle academic years - could be wrapped or unwrapped
+      const years = Array.isArray(yearsData) ? yearsData : (yearsData?.data || [])
+      setAcademicYears(years)
       // Auto-select current academic year if available
-      const safeYears = Array.isArray(yearsData) ? yearsData : []
-      const currentYear = safeYears.find((y: AcademicYear) => y.isCurrent)
+      const currentYear = years.find((y: AcademicYear) => y.isCurrent)
       if (currentYear) {
         setAcademicYearId(currentYear.id)
-      } else if (safeYears.length > 0) {
-        setAcademicYearId(safeYears[0].id)
+      } else if (years.length > 0) {
+        setAcademicYearId(years[0].id)
       }
       
-      setSubjects(allSubjects)
-      setClasses(classesData.classes || [])
+      // Handle subjects - could be wrapped or unwrapped
+      const subjList = Array.isArray(allSubjects) ? allSubjects : (allSubjects?.data || [])
+      setSubjects(subjList)
+      
+      // Handle classes - could be wrapped or unwrapped
+      const clsList = Array.isArray(classesData) ? classesData : (classesData?.data || [])
+      setClasses(clsList)
       
       // Get assigned subjects
       const assignedSubjects = await getTeacherAssignedSubjects(teacher.id)

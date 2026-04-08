@@ -335,10 +335,14 @@ export async function getUserById(userId: string): Promise<User> {
 /**
  * Get all subjects
  */
-export async function getSubjects(): Promise<Subject[]> {
+export async function getSubjects(): Promise<{ data: Subject[]; pagination?: any }> {
   try {
-    const response = await apiClient.get<{ success: boolean; data: Subject[] }>('admin/subjects')
-    return response.data.data || []
+    const response = await apiClient.get<{ success: boolean; data: Subject[]; pagination?: any }>('admin/subjects')
+    // Handle wrapped response
+    if (response.data.success !== undefined) {
+      return { data: response.data.data || [], pagination: response.data.pagination }
+    }
+    return { data: Array.isArray(response.data) ? response.data : [] }
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('Failed to fetch subjects:', error.response?.data)

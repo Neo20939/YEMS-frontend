@@ -211,9 +211,13 @@ apiClient.interceptors.response.use(
 // Academic Years
 // ============================================================================
 
-export async function getAcademicYears(): Promise<AcademicYear[]> {
-  const response = await apiClient.get<AcademicYear[]>('academic/academic-years')
-  return response.data
+export async function getAcademicYears(): Promise<{ data: AcademicYear[]; pagination?: any }> {
+  const response = await apiClient.get<{ success: boolean; data: AcademicYear[]; pagination?: any }>('academic/academic-years')
+  // Handle wrapped response
+  if (response.data.success !== undefined) {
+    return { data: response.data.data || [], pagination: response.data.pagination }
+  }
+  return { data: Array.isArray(response.data) ? response.data : [] }
 }
 
 export async function getAcademicYear(id: string): Promise<AcademicYear> {
@@ -305,9 +309,14 @@ export async function getDepartments(): Promise<Department[]> {
 // Classes
 // ============================================================================
 
-export async function getClasses(): Promise<AcademicClass[]> {
-  const response = await apiClient.get<AcademicClass[]>('academic/classes')
-  return response.data
+export async function getClasses(params?: { limit?: number; page?: number }): Promise<{ data: AcademicClass[]; pagination?: any }> {
+  const queryString = params ? '?' + new URLSearchParams(params as any).toString() : ''
+  const response = await apiClient.get<{ success: boolean; data: AcademicClass[]; pagination?: any }>(`academic/classes${queryString}`)
+  // Handle wrapped response
+  if (response.data.success !== undefined) {
+    return { data: response.data.data || [], pagination: response.data.pagination }
+  }
+  return { data: Array.isArray(response.data) ? response.data : [] }
 }
 
 export async function getClass(id: string): Promise<AcademicClass> {
