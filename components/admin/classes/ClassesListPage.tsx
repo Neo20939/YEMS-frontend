@@ -50,6 +50,16 @@ export default function ClassesListPage() {
   // Class teacher assignments for frontend filtering
   const [classTeacherAssignments, setClassTeacherAssignments] = useState<Array<{ classId: string; teacherId: string }>>([]);
 
+  // Compute filtered classes for teacher filter (backend doesn't support formTeacherId filter)
+  // Must be defined before any callbacks that use it
+  const displayClasses = classFilters.form_teacher_id
+    ? classes.filter(c => 
+        classTeacherAssignments.some(
+          a => a.classId === c.id && a.teacherId === classFilters.form_teacher_id
+        )
+      )
+    : classes;
+
   useEffect(() => {
     // Fetch teachers and academic years for dropdowns
     const fetchData = async () => {
@@ -257,15 +267,6 @@ export default function ClassesListPage() {
   const handleManageEnrollment = (classItem: Class) => {
     window.location.href = `/admin/classes/${classItem.id}/enrollment`;
   };
-
-  // Compute filtered classes for teacher filter (backend doesn't support formTeacherId filter)
-  const displayClasses = classFilters.form_teacher_id
-    ? classes.filter(c => 
-        classTeacherAssignments.some(
-          a => a.classId === c.id && a.teacherId === classFilters.form_teacher_id
-        )
-      )
-    : classes;
 
   return (
     <AdminLayout>
