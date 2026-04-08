@@ -381,7 +381,9 @@ export async function getTeacherSubjectAssignment(id: string): Promise<TeacherSu
 }
 
 export async function createTeacherSubjectAssignment(data: CreateTeacherSubjectAssignmentRequest): Promise<TeacherSubjectAssignment> {
+  console.log('[createTeacherSubjectAssignment] Sending data:', JSON.stringify(data))
   const response = await apiClient.post<TeacherSubjectAssignment>('academic/teacher-subject-assignments', data)
+  console.log('[createTeacherSubjectAssignment] Response:', response.data)
   return response.data
 }
 

@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const token = request.headers.get('authorization')
 
+    console.log('[Teacher Subject Assignments API] POST body:', JSON.stringify(body))
+    console.log('[Teacher Subject Assignments API] Token:', token ? 'present' : 'missing')
+
     const response = await fetch(`${API_BASE_URL}/api/academic/teacher-subject-assignments`, {
       method: 'POST',
       headers: {
@@ -70,6 +73,8 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(body),
     })
+
+    console.log('[Teacher Subject Assignments API] Response status:', response.status)
 
     const contentType = response.headers.get('content-type')
     const isJson = contentType?.includes('application/json')
@@ -83,6 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
+    console.log('[Teacher Subject Assignments API] Response data:', JSON.stringify(data))
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status })
