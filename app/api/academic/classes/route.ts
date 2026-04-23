@@ -24,6 +24,7 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
 
     // Forward query parameters to backend
     const queryString = request.nextUrl.search.toString()
@@ -32,16 +33,20 @@ export async function GET(request: NextRequest) {
       : `${API_BASE_URL}/api/academic/classes`
 
     console.log('[Classes API] Proxy GET to:', backendUrl)
-    console.log('[Classes API] Query params:', queryString)
-    console.log('[Classes API] Full URL:', request.nextUrl.href)
-    console.log('[Classes API] All search params:', Object.fromEntries(request.nextUrl.searchParams))
+
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    }
+    if (token) headers['Authorization'] = token.replace('Bearer ', '')
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
 
     const response = await fetch(backendUrl, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        ...(token ? { Authorization: token.replace('Bearer ', '') } : {}),
-      },
+      headers,
     })
 
     const contentType = response.headers.get('content-type')

@@ -1,4 +1,4 @@
-import { axios as kiattpAxios } from 'kiattp/axios'
+import axiosOriginal, { isAxiosError as isAxiosErrorOriginal } from 'axios'
 
 export interface AxiosResponse<T = unknown> {
   data: T
@@ -43,16 +43,9 @@ export interface AxiosInstance {
   create(config?: any): AxiosInstance
 }
 
-export function isAxiosError(error: unknown): error is AxiosError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'isAxiosError' in error &&
-    (error as any).isAxiosError === true
-  )
-}
+export const isAxiosError = isAxiosErrorOriginal;
 
-const shimmedInstance = kiattpAxios as unknown as AxiosInstance
+const shimmedInstance = axiosOriginal as unknown as AxiosInstance
 export const axios: AxiosInstance & { isAxiosError: typeof isAxiosError } = Object.assign(shimmedInstance, {
   isAxiosError,
 })

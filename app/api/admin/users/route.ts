@@ -27,9 +27,12 @@ export async function POST(request: NextRequest) {
     
     // Get session cookie from incoming request
     const sessionCookie = request.cookies.get('yems_session')?.value
+    const authToken = request.cookies.get('auth_token')?.value
 
     console.log('[Users API] Creating user...')
     console.log('[Users API] yems_session cookie:', sessionCookie ? 'present' : 'missing')
+    console.log('[Users API] auth_token cookie:', authToken ? 'present' : 'missing')
+    console.log('[Users API] Authorization header:', token ? 'present' : 'missing')
     console.log('[Users API] Body:', body)
 
     // Backend /api/users/ expects specific fields
@@ -74,7 +77,8 @@ export async function POST(request: NextRequest) {
       backendData.roles = [roleId]
     }
 
-    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
+    // Use Bearer token from header or auth_token cookie
+    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : (authToken ? `Bearer ${authToken}` : undefined)
 
     // Build headers
     const headers: Record<string, string> = {
@@ -85,12 +89,14 @@ export async function POST(request: NextRequest) {
     
     console.log('[Users API] Session cookie value:', sessionCookie ? 'present' : 'missing')
     if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
       headers['Cookie'] = `yems_session=${sessionCookie}`
     }
 
     console.log('[Users API] Final headers:', JSON.stringify(headers))
 
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/`, {
       method: 'POST',
       headers,
       body: JSON.stringify(backendData),
@@ -132,13 +138,16 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
     const sessionCookie = request.cookies.get('yems_session')?.value
+    const authToken = request.cookies.get('auth_token')?.value
 
     console.log('[Users API] Proxying GET request to backend...')
     console.log('[Users API] Token present:', !!token)
     console.log('[Users API] Session cookie present:', !!sessionCookie)
+    console.log('[Users API] auth_token present:', !!authToken)
 
     // Backend has /api/users/ for listing users
-    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
+    // Use Bearer token from header or auth_token cookie
+    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : (authToken ? `Bearer ${authToken}` : undefined)
 
     // Build headers
     const headers: Record<string, string> = {
@@ -147,15 +156,22 @@ export async function GET(request: NextRequest) {
     }
     if (authHeader) headers['Authorization'] = authHeader
     if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
       headers['Cookie'] = `yems_session=${sessionCookie}`
-      console.log('[Users API] Sending cookie to backend')
+      console.log('[Users API] Sending x-session-token to backend')
     }
 
-    console.log('[Users API] Calling backend:', `${API_BASE_URL}/api/users`)
+    // Forward all query params to backend
+    const urlObj = new URL(request.url)
+    const queryString = urlObj.search.slice(1) // remove leading ?
+    const backendUrl = `${API_BASE_URL}/api/users/${queryString ? '?' + queryString : ''}`
+    
+    console.log('[Users API] Calling backend:', backendUrl)
     
     let response
     try {
-      response = await fetch(`${API_BASE_URL}/api/users`, {
+      response = await fetch(backendUrl, {
         headers,
       })
     } catch (fetchError: any) {
@@ -170,7 +186,22 @@ export async function GET(request: NextRequest) {
     console.log('[Users API] Backend response status:', response.status)
 
     const text = await response.text()
-    console.log('[Users API] Backend response body:', text.substring(0, 1000))
+    console.log('[Users API] Backend response body:', text.substring(0, 2000))
+    
+    // Debug: count unique roles in raw response
+    try {
+      const parsed = JSON.parse(text)
+      const usersArray = Array.isArray(parsed) ? parsed : (parsed.data || parsed.users || parsed.results || [])
+      if (Array.isArray(usersArray)) {
+        const roleCounts: Record<string, number> = {}
+        usersArray.forEach((u: any) => {
+          const r = Array.isArray(u.roles) ? u.roles[0] : u.roles
+          roleCounts['role_' + r] = (roleCounts['role_' + r] || 0) + 1
+        })
+        console.log('[Users API] Raw role distribution:', roleCounts)
+      }
+    } catch { /* ignore parse errors */ }
+    console.log('[Users API] Response OK:', response.ok)
 
     // Try to parse as JSON
     let data
@@ -193,54 +224,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Wrap response in success format to match expected format
-    return NextResponse.json({ success: true, data: data })
+    const jsonResponse = NextResponse.json({ success: true, data: data })
+    // Prevent caching so fresh data is always returned
+    jsonResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    jsonResponse.headers.set('Pragma', 'no-cache')
+    jsonResponse.headers.set('Expires', '0')
+    return jsonResponse
   } catch (error: any) {
     console.error('[Users API] Proxy error:', error)
     console.error('[Users API] Error stack:', error.stack)
     return NextResponse.json(
       { error: 'Failed to fetch users', message: error.message, details: error.stack },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const token = request.headers.get('authorization')
-    const sessionCookie = request.cookies.get('yems_session')?.value
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('id')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 })
-    }
-
-    // Backend uses /api/users/{id} for deleting users
-    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
-
-    // Build headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    }
-    if (authHeader) headers['Authorization'] = authHeader
-    if (sessionCookie) headers['Cookie'] = `yems_session=${sessionCookie}`
-
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
-      method: 'DELETE',
-      headers,
-    })
-
-    if (!response.ok) {
-      const data = await response.json()
-      return NextResponse.json(data, { status: response.status })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('[Users API] Proxy error:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete user', message: error.message },
       { status: 500 }
     )
   }

@@ -99,32 +99,17 @@ export const classService = {
   async getClasses(
     filters: ClassFilters & { page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }
   ): Promise<ClassListResponse> {
+    // Simplified params - just basic pagination to avoid backend issues
     const params = new URLSearchParams();
-
-    if (filters.search) params.append('search', filters.search);
-    if (filters.level) params.append('level', filters.level);
-    if (filters.stream) params.append('stream', filters.stream);
-    if (filters.status) params.append('status', filters.status);
-    if (filters.academic_year) params.append('academicYearId', filters.academic_year);
-    if (filters.form_teacher_id) {
-      console.log('[getClasses] Adding formTeacherId filter:', filters.form_teacher_id);
-      params.append('formTeacherId', filters.form_teacher_id);
-      // Also try teacherId as alternative
-      params.append('teacherId', filters.form_teacher_id);
-      // Also try form_teacher_id
-      params.append('form_teacher_id', filters.form_teacher_id);
-    }
     if (filters.page) params.append('page', filters.page.toString());
-    if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.sort) params.append('sort', filters.sort);
-    if (filters.order) params.append('order', filters.order);
+    if (filters.limit) params.append('limit', (filters.limit || 25).toString());
 
     console.log('[getClasses] Calling API with params:', params.toString())
     console.log('[getClasses] Full URL will be:', `/academic/classes?${params.toString()}`)
     const response = await apiClient.get(`academic/classes`, { params });
     console.log('[getClasses] Response:', response)
-    console.log('[getClasses] Number of classes returned:', response.data?.data?.length || 0)
-    console.log('[getClasses] Full first class object:', JSON.stringify(response.data?.data?.[0], null, 2))
+    console.log('[getClasses] Number of classes returned:', (response as any).data?.data?.length || 0)
+    console.log('[getClasses] Full first class object:', JSON.stringify((response as any).data?.data?.[0], null, 2))
     return handleResponse(response);
   },
 
@@ -154,7 +139,9 @@ export const classService = {
     classId: string,
     input: ClassUpdateInput
   ): Promise<Class> {
-    const response = await apiClient.put(`academic/classes/${classId}`, input);
+    console.log('[updateClass] Calling API with classId:', classId, 'input:', input);
+    const response = await apiClient.patch(`academic/classes/${classId}`, input);
+    console.log('[updateClass] Response:', response.data);
     return handleResponse(response);
   },
 
@@ -164,13 +151,14 @@ export const classService = {
     return handleResponse(response);
   },
 
-  // Get class details (includes students, subjects, timetable)
-  async getClassDetails(classId: string): Promise<ClassDetails> {
-    const response = await apiClient.get(`academic/classes/${classId}/details`);
+  
+  async getClassDetails(classId: string): Promise<any> {
+    // Use correct endpoint: GET /api/academic/classes/:id
+    const response = await apiClient.get(`academic/classes/${classId}`);
     return handleResponse(response);
   },
 
-  // Get class students
+  // Get class students (separate endpoint)
   async getClassStudents(classId: string): Promise<StudentEnrollment[]> {
     const response = await apiClient.get(`academic/classes/${classId}/students`);
     return handleResponse(response);
@@ -248,28 +236,55 @@ export const classService = {
     return handleResponse(response);
   },
 
-  // Enrollment Management
-  async enrollStudent(
-    classId: string,
-    input: EnrollmentInput
-  ): Promise<StudentEnrollment> {
-    const response = await apiClient.post(`academic/classes/${classId}/enrollments`, input);
-    return handleResponse(response);
-  },
+   // Enrollment Management
+   // Note: Per api.md (Section 5.4), enrollment endpoint is student-centric:
+   // POST /api/students/:id/enroll with body: { classId, termId, academicYearId }
+   // We use the Next.js proxy at /api/admin/students/:studentId/enroll
+    async enrollStudent(
+      studentId: string,
+      input: EnrollmentInput
+    ): Promise<StudentEnrollment> {
+      // CAPACITY VALIDATION: Check class capacity before enrollment
+      try {
+        const classResponse = await apiClient.get(`academic/classes/${input.classId}`);
+        const classData = await handleResponse(classResponse) as any;
+        const classObj = classData.data || classData;
 
-  async getClassEnrollments(
-    classId: string
+        // Capacity check - backend returns `capacity` (nullable)
+        const capacity = classObj.capacity;
+        const currentCount = classObj.enrolled_count ??
+                           classObj.student_count ??
+                           0;
+
+        if (capacity && capacity > 0 && currentCount >= capacity) {
+          throw new Error(
+            `CAPACITY_EXCEEDED: Class "${classObj.name}" is full (${currentCount}/${capacity} students).`
+          );
+        }
+      } catch (error: any) {
+        if (error.message?.includes('CAPACITY_EXCEEDED')) {
+          throw error;
+        }
+        console.warn('[enrollStudent] Could not pre-validate capacity:', error.message);
+      }
+
+      const response = await apiClient.post(`admin/students/${studentId}/enroll`, input);
+      return handleResponse(response);
+    },
+
+  async getStudentEnrollments(
+    studentId: string
   ): Promise<StudentEnrollment[]> {
-    const response = await apiClient.get(`academic/classes/${classId}/enrollments`);
+    const response = await apiClient.get(`admin/students/${studentId}/enrollments`);
     return handleResponse(response);
   },
 
   async removeStudentFromClass(
-    classId: string,
-    studentId: string
+    studentId: string,
+    classId: string
   ): Promise<{ message: string }> {
     const response = await apiClient.delete(
-      `academic/classes/${classId}/enrollments/${studentId}`
+      `admin/students/${studentId}/enrollments/${classId}`
     );
     return handleResponse(response);
   },
@@ -290,7 +305,7 @@ export const classService = {
   async getClassTeacherAssignments(): Promise<Array<{ classId: string; teacherId: string }>> {
     try {
       const response = await apiClient.get(`academic/class-teacher-assignments`);
-      const result = await handleResponse(response);
+      const result = await handleResponse(response) as any;
       // Handle both wrapped and unwrapped responses
       const items = result.data || result;
       if (!Array.isArray(items)) {

@@ -87,20 +87,20 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
       expiresIn = Math.floor((expiresDate.getTime() - now.getTime()) / 1000)
     }
 
-    // Map role ID to role name
+    // Map role ID to role name (matches API spec message.txt lines 65-78)
     const roleIdMap: Record<number, string> = {
       1: 'admin',
       2: 'technician',
-      3: 'teacher',
+      3: 'subject_teacher',
       4: 'class_teacher',
-      5: 'finance',
-      6: 'admin',
-      7: 'student',
-      8: 'student',
-      9: 'student',
-      10: 'student',
-      11: 'student',
-      12: 'student',
+      5: 'finance_staff',
+      6: 'reserved',
+      7: 'student_js1',
+      8: 'student_js2',
+      9: 'student_js3',
+      10: 'student_ss1',
+      11: 'student_ss2',
+      12: 'student_ss3',
     }
     
     const firstRole = user.roles?.[0]

@@ -49,14 +49,14 @@ export interface Term {
 export interface CreateTermRequest {
   name: string
   academicYearId: string
+  termNumber: number
   startDate: string
   endDate: string
 }
 
 export interface UpdateTermRequest {
   name?: string
-  startDate?: string
-  endDate?: string
+  termNumber?: number
 }
 
 // Class Level
@@ -74,28 +74,67 @@ export interface Department {
   code: string
 }
 
-// Class
+// Class (frontend view model - maps backend AcademicClass to UI type)
+export interface Class {
+  id: string
+  class_name: string
+  class_code: string
+  level: string
+  stream?: string
+  academic_year: string
+  max_capacity: number
+  form_teacher_id?: string
+  form_teacher_name?: string
+  status: 'active' | 'archived'
+  enrolled_count?: number
+  student_count?: number
+  created_at: string
+  updated_at: string
+  created_by?: string
+  updated_by?: string
+  // raw backend fields also available
+  classLevelId?: string
+  departmentId?: string
+  academicYearId?: string
+}
+
+// Backend AcademicClass (as returned by the API)
 export interface AcademicClass {
   id: string
   name: string
   classLevelId: string
+  classLevelName?: string
   departmentId?: string
-  academicYearId: string
+  departmentName?: string
+  academicYearId?: string
+  academicYearName?: string
+  capacity?: number
+  isActive?: boolean
   createdAt?: string
   updatedAt?: string
+  level?: string
+  enrolledCount?: number
 }
 
+// Re-export for backward compatibility
+export type { AcademicClass as AcademicClassRaw }
+
 export interface CreateClassRequest {
-  name: string
+  name?: string
+  arm?: string
   classLevelId: string
   departmentId?: string
   academicYearId: string
+  capacity?: number
 }
 
 export interface UpdateClassRequest {
   name?: string
+  arm?: string
   classLevelId?: string
   departmentId?: string
+  capacity?: number
+  isActive?: boolean
 }
 
 // Subject
@@ -231,7 +270,10 @@ export async function getCurrentAcademicYear(): Promise<AcademicYear> {
 }
 
 export async function createAcademicYear(data: CreateAcademicYearRequest): Promise<AcademicYear> {
-  const response = await apiClient.post<AcademicYear>('academic/academic-years', data)
+  console.log('[createAcademicYear] Sending request with data:', JSON.stringify(data));
+  const response = await apiClient.post<any>('academic/academic-years', data)
+  console.log('[createAcademicYear] Response status:', response.status);
+  console.log('[createAcademicYear] Response data:', JSON.stringify(response.data));
   return response.data
 }
 
@@ -259,8 +301,25 @@ export async function setCurrentAcademicYear(id: string): Promise<AcademicYear> 
 // ============================================================================
 
 export async function getTerms(): Promise<Term[]> {
-  const response = await apiClient.get<Term[]>('academic/terms')
-  return response.data
+  const response = await apiClient.get<any>('academic/terms')
+  // Handle different response formats from backend
+  let termData: Term[] = []
+  
+  // Case 1: { success: true, data: [...] }
+  if (response.data.success === true && Array.isArray(response.data.data)) {
+    termData = response.data.data
+  }
+  // Case 2: { data: [...] }
+  else if (response.data.data && Array.isArray(response.data.data)) {
+    termData = response.data.data
+  }
+  // Case 3: [...] direct array
+  else if (Array.isArray(response.data)) {
+    termData = response.data
+  }
+  
+  console.log('[getTerms] Parsed:', termData.length, 'terms')
+  return termData
 }
 
 export async function getTerm(id: string): Promise<Term> {
@@ -269,7 +328,10 @@ export async function getTerm(id: string): Promise<Term> {
 }
 
 export async function createTerm(data: CreateTermRequest): Promise<Term> {
-  const response = await apiClient.post<Term>('academic/terms', data)
+  console.log('[createTerm] Sending request with data:', JSON.stringify(data));
+  const response = await apiClient.post<any>('academic/terms', data)
+  console.log('[createTerm] Response status:', response.status);
+  console.log('[createTerm] Response data:', JSON.stringify(response.data));
   return response.data
 }
 
@@ -309,29 +371,74 @@ export async function getDepartments(): Promise<Department[]> {
 // Classes
 // ============================================================================
 
-export async function getClasses(params?: { limit?: number; page?: number }): Promise<{ data: AcademicClass[]; pagination?: any }> {
+/**
+ * Transform a raw backend AcademicClass to the frontend Class view model
+ */
+function toClass(b: AcademicClass): Class {
+  // Backend returns name=classLevelName, so use that directly as class name
+  // Also use classLevelName and academicYearName when available
+  const name = b.name || b.classLevelName || ''
+  const code = name
+    .split(' ')
+    .map((w) => w.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3))
+    .join('')
+    .toUpperCase()
+    .slice(0, 8)
+  
+  // Use level name from backend if available
+  const level = b.classLevelName || b.level || ''
+  
+  return {
+    id: b.id,
+    class_name: name,
+    class_code: code,
+    level: level,
+    stream: undefined,
+    academic_year: b.academicYearName || '',
+    max_capacity: b.capacity || 0,
+    form_teacher_id: undefined,
+    form_teacher_name: undefined,
+    status: b.isActive ? 'active' : 'archived',
+    enrolled_count: b.enrolledCount || 0,
+    student_count: b.enrolledCount || 0,
+    created_at: b.createdAt || new Date().toISOString(),
+    updated_at: b.updatedAt || new Date().toISOString(),
+    // raw
+    classLevelId: b.classLevelId,
+    departmentId: b.departmentId,
+    academicYearId: b.academicYearId,
+  }
+}
+
+export async function getClasses(params?: { limit?: number; page?: number }): Promise<{ data: Class[]; pagination?: any }> {
   const queryString = params ? '?' + new URLSearchParams(params as any).toString() : ''
   const response = await apiClient.get<{ success: boolean; data: AcademicClass[]; pagination?: any }>(`academic/classes${queryString}`)
   // Handle wrapped response
-  if (response.data.success !== undefined) {
-    return { data: response.data.data || [], pagination: response.data.pagination }
+  let raw: AcademicClass[] = []
+  if (response.data.success !== undefined && Array.isArray(response.data.data)) {
+    raw = response.data.data
+  } else if (Array.isArray(response.data)) {
+    raw = response.data
   }
-  return { data: Array.isArray(response.data) ? response.data : [] }
+  return {
+    data: raw.map(toClass),
+    pagination: response.data.pagination,
+  }
 }
 
-export async function getClass(id: string): Promise<AcademicClass> {
+export async function getClass(id: string): Promise<Class> {
   const response = await apiClient.get<AcademicClass>(`academic/classes/${id}`)
-  return response.data
+  return toClass(response.data)
 }
 
-export async function createClass(data: CreateClassRequest): Promise<AcademicClass> {
+export async function createClass(data: CreateClassRequest): Promise<Class> {
   const response = await apiClient.post<AcademicClass>('academic/classes', data)
-  return response.data
+  return toClass(response.data)
 }
 
-export async function updateClass(id: string, data: UpdateClassRequest): Promise<AcademicClass> {
+export async function updateClass(id: string, data: UpdateClassRequest): Promise<Class> {
   const response = await apiClient.patch<AcademicClass>(`academic/classes/${id}`, data)
-  return response.data
+  return toClass(response.data)
 }
 
 export async function deleteClass(id: string): Promise<void> {
@@ -343,8 +450,29 @@ export async function deleteClass(id: string): Promise<void> {
 // ============================================================================
 
 export async function getSubjects(): Promise<AcademicSubject[]> {
-  const response = await apiClient.get<AcademicSubject[]>('academic/subjects')
-  return response.data
+  const response = await apiClient.get<any>('academic/subjects')
+  // Handle different response formats from backend
+  let subjectData: AcademicSubject[] = []
+  
+  // Case 1: { success: true, data: [...] }
+  if (response.data.success === true && Array.isArray(response.data.data)) {
+    subjectData = response.data.data
+  }
+  // Case 2: { data: [...] }
+  else if (response.data.data && Array.isArray(response.data.data)) {
+    subjectData = response.data.data
+  }
+  // Case 3: [...] direct array
+  else if (Array.isArray(response.data)) {
+    subjectData = response.data
+  }
+  // Case 4: { results: [...] }
+  else if (response.data.results && Array.isArray(response.data.results)) {
+    subjectData = response.data.results
+  }
+  
+  console.log('[academic getSubjects] Parsed:', subjectData.length, 'subjects')
+  return subjectData
 }
 
 export async function getSubject(id: string): Promise<AcademicSubject> {
@@ -371,8 +499,29 @@ export async function deleteSubject(id: string): Promise<void> {
 // ============================================================================
 
 export async function getTeacherSubjectAssignments(): Promise<TeacherSubjectAssignment[]> {
-  const response = await apiClient.get<TeacherSubjectAssignment[]>('academic/teacher-subject-assignments')
-  return response.data
+  const response = await apiClient.get<any>('academic/teacher-subject-assignments')
+  // Handle different response formats
+  let assignmentData: TeacherSubjectAssignment[] = []
+  
+  // Case 1: { success: true, data: [...] }
+  if (response.data.success === true && Array.isArray(response.data.data)) {
+    assignmentData = response.data.data
+  }
+  // Case 2: { data: [...] }
+  else if (response.data.data && Array.isArray(response.data.data)) {
+    assignmentData = response.data.data
+  }
+  // Case 3: [...] direct array
+  else if (Array.isArray(response.data)) {
+    assignmentData = response.data
+  }
+  // Case 4: { results: [...] }
+  else if (response.data.results && Array.isArray(response.data.results)) {
+    assignmentData = response.data.results
+  }
+  
+  console.log('[getTeacherSubjectAssignments] Parsed:', assignmentData.length, 'assignments')
+  return assignmentData
 }
 
 export async function getTeacherSubjectAssignment(id: string): Promise<TeacherSubjectAssignment> {
@@ -412,4 +561,54 @@ export async function createClassTeacherAssignment(data: CreateClassTeacherAssig
 
 export async function deleteClassTeacherAssignment(id: string): Promise<void> {
   await apiClient.delete(`academic/class-teacher-assignments/${id}`)
+}
+
+// ============================================================================
+// Student Enrollment / Transfer
+// ============================================================================
+
+export interface EnrollStudentRequest {
+  classId: string
+  termId: string
+  academicYearId?: string
+}
+
+export interface TransferStudentRequest {
+  classId: string
+  termId: string
+  academicYearId?: string
+}
+
+/**
+ * Enroll a student in a class - uses native fetch to avoid kiattp/axios async issues
+ */
+export async function enrollStudent(studentId: string, data: EnrollStudentRequest): Promise<any> {
+  const response = await fetch('/api/admin/students/' + studentId + '/enroll', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  const result = await response.json()
+  if (!response.ok) {
+    throw new Error(result.error?.message || result.message || 'Failed to enroll student')
+  }
+  return result.data ?? result
+}
+
+/**
+ * Transfer a student to another class - uses native fetch to avoid kiattp/axios async issues
+ */
+export async function transferStudent(studentId: string, data: TransferStudentRequest): Promise<any> {
+  const response = await fetch('/api/admin/students/' + studentId + '/transfer', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  const result = await response.json()
+  if (!response.ok) {
+    throw new Error(result.error?.message || result.message || 'Failed to transfer student')
+  }
+  return result.data ?? result
 }

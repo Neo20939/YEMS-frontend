@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
     
     if (yemsSession) {
       headers['Cookie'] = `yems_session=${yemsSession}`
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = yemsSession
     }
 
     // Direct call to external API's /admin/stats endpoint

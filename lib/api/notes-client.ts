@@ -20,16 +20,35 @@ import {
 } from './types'
 
 /**
+ * Interface for subject options in dropdowns
+ */
+export interface SubjectOption {
+  id: string
+  name: string
+}
+
+/**
+ * Interface for class options in dropdowns
+ */
+export interface ClassOption {
+  id: string
+  name: string
+}
+
+/**
  * Configuration for the Notes API
+ * Use Next.js proxy (/api) to avoid CORS issues
  */
 const NOTES_API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+  baseUrl: '/api',  // Use Next.js proxy instead of direct backend URL
   timeout: 60000, // 60 seconds for file uploads
   endpoints: {
-    notes: 'api/notes',
-    upload: 'api/notes/upload',
-    download: (noteId: string) => `api/notes/${noteId}/download`,
-    note: (noteId: string) => `api/notes/${noteId}`,
+    notes: 'notes',
+    subjects: 'academic/subjects',  // Use academic API for subjects
+    classGrades: 'academic/classes',  // Use academic API for classes
+    upload: 'notes/upload',
+    download: (noteId: string) => `notes/${noteId}/download`,
+    note: (noteId: string) => `notes/${noteId}`,
   },
 }
 
@@ -68,8 +87,158 @@ function getCurrentUser(): { id: string; role: string } | null {
 }
 
 /**
- * Get teacher's assigned subjects from localStorage
- * This is set by admin when assigning subjects to teacher
+ * Get teacher's assigned subjects from the API (returns IDs for compatibility)
+ */
+export async function getTeacherAssignedSubjectsAsync(): Promise<string[]> {
+  if (typeof window === 'undefined') return []
+  const user = getCurrentUser()
+  if (!user) return []
+  
+  try {
+    const { getTeacherSubjectAssignments, getSubjects } = await import('./academic-client')
+    
+    const assignments = await getTeacherSubjectAssignments()
+    const teacherAssignments = Array.isArray(assignments) 
+      ? assignments.filter((a: any) => a.teacherId === user.id)
+      : []
+    
+    const allSubjects = await getSubjects()
+    
+    let safeAllSubjects: any[] = []
+    if (Array.isArray(allSubjects)) {
+      safeAllSubjects = allSubjects
+    } else if (allSubjects && Array.isArray((allSubjects as any).data)) {
+      safeAllSubjects = (allSubjects as any).data
+    }
+    
+    const assignedSubjectIds = [...new Set(teacherAssignments.map((a: any) => a.subjectId))]
+    const assignedSubjects = safeAllSubjects.filter((s: any) => assignedSubjectIds.includes(s.id))
+    
+    // Return subject IDs for compatibility
+    return assignedSubjects.map((s: any) => s.id)
+  } catch (error) {
+    console.error('[getTeacherAssignedSubjectsAsync] Error:', error)
+    return []
+  }
+}
+
+/**
+ * Get teacher's assigned subjects with full details (for display)
+ */
+export async function getTeacherAssignedSubjectOptions(): Promise<SubjectOption[]> {
+  if (typeof window === 'undefined') return []
+  const user = getCurrentUser()
+  if (!user) return []
+  
+  try {
+    const { getTeacherSubjectAssignments, getSubjects } = await import('./academic-client')
+    
+    const assignments = await getTeacherSubjectAssignments()
+    const teacherAssignments = Array.isArray(assignments) 
+      ? assignments.filter((a: any) => a.teacherId === user.id)
+      : []
+    
+    const allSubjects = await getSubjects()
+    
+    let safeAllSubjects: any[] = []
+    if (Array.isArray(allSubjects)) {
+      safeAllSubjects = allSubjects
+    } else if (allSubjects && Array.isArray((allSubjects as any).data)) {
+      safeAllSubjects = (allSubjects as any).data
+    }
+    
+    const assignedSubjectIds = [...new Set(teacherAssignments.map((a: any) => a.subjectId))]
+    const assignedSubjects = safeAllSubjects.filter((s: any) => assignedSubjectIds.includes(s.id))
+    
+    return assignedSubjects.map((s: any) => ({
+      id: s.id,
+      name: s.name
+    }))
+  } catch (error) {
+    console.error('[getTeacherAssignedSubjectOptions] Error:', error)
+    return []
+  }
+}
+
+/**
+ * Get all available subjects for dropdown
+ * Returns subject objects with id and name
+ */
+export async function getSubjectsForDropdown(): Promise<SubjectOption[]> {
+  try {
+    const { getSubjects } = await import('./academic-client')
+    const subjects = await getSubjects()
+    
+    let safeSubjects: any[] = []
+    if (Array.isArray(subjects)) {
+      safeSubjects = subjects
+    } else if (subjects && Array.isArray((subjects as any).data)) {
+      safeSubjects = (subjects as any).data
+    }
+    
+    return safeSubjects.map((s: any) => ({
+      id: s.id,
+      name: s.name
+    }))
+  } catch (error) {
+    console.error('[getSubjectsForDropdown] Error:', error)
+    return []
+  }
+}
+
+/**
+ * Get all available classes for dropdown
+ * Returns class objects with id and name
+ */
+export async function getClassesForDropdown(): Promise<ClassOption[]> {
+  try {
+    const { getClasses } = await import('./academic-client')
+    const classesResult = await getClasses()
+    
+    let classes: any[] = []
+    if (Array.isArray(classesResult)) {
+      classes = classesResult
+    } else if (classesResult && Array.isArray((classesResult as any).data)) {
+      classes = (classesResult as any).data
+    }
+    
+    return classes.map((c: any) => ({
+      id: c.id,
+      name: c.name || c.classLevelName || c.id
+    }))
+  } catch (error) {
+    console.error('[getClassesForDropdown] Error:', error)
+    return []
+  }
+}
+
+/**
+ * Get teacher's assigned class IDs from the API
+ */
+export async function getTeacherAssignedClassIdsAsync(): Promise<string[]> {
+  if (typeof window === 'undefined') return []
+  const user = getCurrentUser()
+  if (!user) return []
+  
+  try {
+    const { getTeacherSubjectAssignments } = await import('./academic-client')
+    
+    const assignments = await getTeacherSubjectAssignments()
+    const teacherAssignments = Array.isArray(assignments) 
+      ? assignments.filter((a: any) => a.teacherId === user.id)
+      : []
+    
+    const classIds = [...new Set(teacherAssignments.map((a: any) => a.classId))]
+    return classIds
+  } catch (error) {
+    console.error('[getTeacherAssignedClassIdsAsync] Error:', error)
+    return []
+  }
+}
+
+/**
+ * Get teacher's assigned subjects from localStorage (sync version for backward compatibility)
+ * Falls back to localStorage if API fails
  */
 export function getTeacherAssignedSubjects(): string[] {
   if (typeof window === 'undefined') return []
@@ -89,12 +258,26 @@ export function getTeacherAssignedSubjects(): string[] {
 
 /**
  * Check if teacher can manage a specific subject
+ * Note: This is a sync function that checks localStorage
+ * For async check with API data, use canTeacherManageSubjectAsync
  */
 export function canTeacherManageSubject(subjectId: string): boolean {
   const user = getCurrentUser()
   if (!user || user.role !== 'teacher') return false
   
   const assignedSubjects = getTeacherAssignedSubjects()
+  return assignedSubjects.includes(subjectId)
+}
+
+/**
+ * Check if teacher can manage a specific subject (async version)
+ * Uses API to get teacher assignments
+ */
+export async function canTeacherManageSubjectAsync(subjectId: string): Promise<boolean> {
+  const user = getCurrentUser()
+  if (!user || user.role !== 'teacher') return false
+  
+  const assignedSubjects = await getTeacherAssignedSubjectsAsync()
   return assignedSubjects.includes(subjectId)
 }
 
@@ -392,7 +575,7 @@ export async function deleteNote(noteId: string): Promise<ApiResponse<DeleteNote
 export async function getAvailableSubjects(): Promise<ApiResponse<string[]>> {
   try {
     // Check if current user is a teacher with assigned subjects
-    const assignedSubjects = getTeacherAssignedSubjects()
+    const assignedSubjects = await getTeacherAssignedSubjectsAsync()
     const user = getCurrentUser()
     
     // If teacher has assigned subjects, return only those
@@ -400,15 +583,17 @@ export async function getAvailableSubjects(): Promise<ApiResponse<string[]>> {
       return { success: true, data: assignedSubjects, timestamp: new Date().toISOString() }
     }
     
-    // Otherwise, try to get all subjects from API
-    const { data } = await notesApiClient.get<{ subjects: string[] }>(
-      `${NOTES_API_CONFIG.endpoints.notes}/subjects`
-    )
-
-    return { success: true, data: data.subjects, timestamp: new Date().toISOString() }
+    // Otherwise, try to get all subjects from academic API
+    const { getSubjects } = await import('./academic-client')
+    const subjects = await getSubjects()
+    
+    // Convert AcademicSubject to string array (using IDs)
+    const subjectIds = subjects.map((s: any) => s.id)
+    return { success: true, data: subjectIds, timestamp: new Date().toISOString() }
   } catch (error) {
-    // Check if teacher has assigned subjects in localStorage
-    const assignedSubjects = getTeacherAssignedSubjects()
+    console.error('[getAvailableSubjects] Error:', error)
+    // Check if teacher has assigned subjects
+    const assignedSubjects = await getTeacherAssignedSubjectsAsync()
     if (assignedSubjects.length > 0) {
       return { success: true, data: assignedSubjects, timestamp: new Date().toISOString() }
     }
@@ -436,12 +621,23 @@ export async function getAvailableSubjects(): Promise<ApiResponse<string[]>> {
  */
 export async function getAvailableClassGrades(): Promise<ApiResponse<string[]>> {
   try {
-    const { data } = await notesApiClient.get<{ classGrades: string[] }>(
-      `${NOTES_API_CONFIG.endpoints.notes}/class-grades`
-    )
-
-    return { success: true, data: data.classGrades, timestamp: new Date().toISOString() }
+    // Get classes from academic API
+    const { getClasses } = await import('./academic-client')
+    const classesResult = await getClasses()
+    
+    // Handle different response formats
+    let classes: any[] = []
+    if (Array.isArray(classesResult)) {
+      classes = classesResult
+    } else if (classesResult && Array.isArray((classesResult as any).data)) {
+      classes = (classesResult as any).data
+    }
+    
+    // Convert AcademicClass to string array (using IDs)
+    const classIds = classes.map((c: any) => c.id)
+    return { success: true, data: classIds, timestamp: new Date().toISOString() }
   } catch (error) {
+    console.error('[getAvailableClassGrades] Error:', error)
     // Return default class grades if API fails
     const defaultGrades = [
       'jss1',
@@ -469,6 +665,8 @@ export const notesApi = {
   deleteNote,
   getAvailableSubjects,
   getAvailableClassGrades,
+  getTeacherAssignedSubjectsAsync,
+  getTeacherAssignedClassIdsAsync,
 }
 
 export default notesApi

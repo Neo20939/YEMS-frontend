@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { User, Subject, getSubjects, getTeacherAssignedSubjects } from "@/lib/api/admin-client"
-import { createTeacherSubjectAssignment, getAcademicYears, AcademicYear, getClasses, Class } from "@/lib/api/academic-client"
+import { createTeacherSubjectAssignment, getAcademicYears, AcademicYear, getClasses, AcademicClass } from "@/lib/api/academic-client"
 
 interface TeacherSubjectAssignmentProps {
   teacher: User
@@ -17,7 +17,7 @@ export default function TeacherSubjectAssignment({
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
   const [academicYearId, setAcademicYearId] = useState<string>("")
-  const [classes, setClasses] = useState<Class[]>([])
+  const [classes, setClasses] = useState<any[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -174,7 +174,7 @@ export default function TeacherSubjectAssignment({
                     <option value="">Select a class...</option>
                     {classes.map((cls) => (
                       <option key={cls.id} value={cls.id}>
-                        {cls.name} {cls.level} {cls.stream ? `(${cls.stream})` : ''}
+                        {cls.name}
                       </option>
                     ))}
                   </select>

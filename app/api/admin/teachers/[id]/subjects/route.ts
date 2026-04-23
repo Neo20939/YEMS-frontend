@@ -40,7 +40,11 @@ export async function GET(
       'Accept': 'application/json',
     }
     if (authHeader) headers['Authorization'] = authHeader
-    if (sessionCookie) headers['Cookie'] = `yems_session=${sessionCookie}`
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/teachers/${teacherId}/subjects`, {
       method: 'GET',
@@ -100,7 +104,11 @@ export async function POST(
       'Accept': 'application/json',
     }
     if (authHeader) headers['Authorization'] = authHeader
-    if (sessionCookie) headers['Cookie'] = `yems_session=${sessionCookie}`
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/teachers/${teacherId}/subjects`, {
       method: 'POST',

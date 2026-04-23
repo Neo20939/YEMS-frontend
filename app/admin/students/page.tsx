@@ -77,7 +77,7 @@ export default function StudentManagementPage() {
         name: userData.name,
         password: userData.password,
         role: 'student',
-      }, 'students')
+      }, 'admin/students')
       console.log('Student created successfully:', newStudent)
       setStudents([...students, newStudent])
       setIsModalOpen(false)

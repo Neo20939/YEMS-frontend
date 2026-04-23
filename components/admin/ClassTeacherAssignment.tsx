@@ -8,7 +8,7 @@ import {
   getClasses, 
   getClassTeacherAssignments,
   AcademicYear, 
-  Class 
+  AcademicClass 
 } from "@/lib/api/academic-client"
 
 interface ClassTeacherAssignmentProps {
@@ -22,7 +22,7 @@ export default function ClassTeacherAssignment({
 }: ClassTeacherAssignmentProps) {
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
   const [academicYearId, setAcademicYearId] = useState<string>("")
-  const [classes, setClasses] = useState<Class[]>([])
+  const [classes, setClasses] = useState<any[]>([])
   const [selectedClass, setSelectedClass] = useState<string>("")
   const [currentAssignment, setCurrentAssignment] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -194,9 +194,9 @@ export default function ClassTeacherAssignment({
                     className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   >
                     <option value="">Select a class...</option>
-                    {classes.map((cls) => (
+                      {classes.map((cls) => (
                       <option key={cls.id} value={cls.id}>
-                        {cls.name} {cls.level} {cls.stream ? `(${cls.stream})` : ''}
+                        {cls.name}
                       </option>
                     ))}
                   </select>

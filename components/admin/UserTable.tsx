@@ -9,9 +9,10 @@ interface UserTableProps {
   onDelete: (id: string) => void
   onAssignSubjects?: (user: User) => void
   onViewSubjects?: (user: User) => void
+  onAssignClass?: (user: User) => void
 }
 
-export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, onViewSubjects }: UserTableProps) {
+export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, onViewSubjects, onAssignClass }: UserTableProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const isTeacher = (role: string) => {
@@ -161,7 +162,17 @@ export default function UserTable({ users, onEdit, onDelete, onAssignSubjects, o
                       className="p-2 text-slate-500 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors"
                       title="Assign subjects"
                     >
-                      <span className="material-symbols-outlined text-lg">book</span>
+                      <span className="material-symbols-outlined text-lg">menu_book</span>
+                    </button>
+                  )}
+                  {/* Show Assign Class button only for class_teacher */}
+                  {String(user.role).toLowerCase() === 'class_teacher' && onAssignClass && (
+                    <button
+                      onClick={() => onAssignClass(user)}
+                      className="p-2 text-slate-500 hover:bg-purple-100 hover:text-purple-700 rounded-lg transition-colors"
+                      title="Assign class"
+                    >
+                      <span className="material-symbols-outlined text-lg">class</span>
                     </button>
                   )}
                   <button

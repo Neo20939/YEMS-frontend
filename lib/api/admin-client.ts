@@ -24,10 +24,12 @@ export interface User {
 
 export interface CreateUserRequest {
   email: string
-  password: string
-  firstName: string
-  lastName: string
-  roles: number[]
+  name?: string
+  password?: string
+  firstName?: string
+  lastName?: string
+  roles?: number[]
+  role?: string  // Legacy support
 }
 
 export interface UpdateUserRequest {
@@ -98,6 +100,9 @@ const apiClient = axios.create({
   credentials: 'include',
   headers: {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
   },
 })
 
@@ -128,80 +133,142 @@ apiClient.interceptors.response.use(
 // ============================================================================
 
 /**
- * Get all users
+ * Get all users (paginated - fetches all pages)
  */
 export async function getUsers(): Promise<User[]> {
   try {
-    const response = await apiClient.get<any>('admin/users')
-    console.log('[getUsers] Full response:', response)
-    console.log('[getUsers] response.data:', response.data)
-    console.log('[getUsers] response.data.data:', response.data.data)
+    const cacheBuster = `_t=${Date.now()}`
+    const allRawUsers: any[] = []
+    let page = 1
+    const limit = 50 // fetch 50 at a time to reduce round trips
+    let totalPages = 1
     
-    // Handle different response formats: { success: true, data: [...] } or just [...]
-    const responseData = response.data
-    let users: User[] = []
-    
-    // Extract users from response
-    let rawUsers: any[] = []
-    if (Array.isArray(responseData)) {
-      rawUsers = responseData
-    } else if (responseData.data) {
-      // Check if responseData.data is the actual array
-      if (Array.isArray(responseData.data)) {
-        rawUsers = responseData.data
-      } else if (responseData.data.data && Array.isArray(responseData.data.data)) {
-        // response.data.data.data = Array(20) - the actual users
-        rawUsers = responseData.data.data
-      } else if (responseData.data.users && Array.isArray(responseData.data.users)) {
-        rawUsers = responseData.data.users
-      } else if (responseData.data.results && Array.isArray(responseData.data.results)) {
-        rawUsers = responseData.data.results
+    do {
+      const response = await apiClient.get<any>(`admin/users?${cacheBuster}&page=${page}&limit=${limit}`)
+      console.log(`[getUsers] Page ${page}:`, response.data)
+      
+      const responseData = response.data
+      let rawUsers: any[] = []
+      
+      // Extract users + pagination from response
+      let pagination: any = null
+      if (Array.isArray(responseData)) {
+        rawUsers = responseData
+        totalPages = 1
+      } else if (responseData.data) {
+        if (Array.isArray(responseData.data)) {
+          rawUsers = responseData.data
+          totalPages = 1
+        } else if (responseData.data.data && Array.isArray(responseData.data.data)) {
+          rawUsers = responseData.data.data
+          pagination = responseData.data.pagination || responseData.data
+        } else if (responseData.data.users && Array.isArray(responseData.data.users)) {
+          rawUsers = responseData.data.users
+          pagination = responseData.data.pagination
+        } else if (responseData.data.results && Array.isArray(responseData.data.results)) {
+          rawUsers = responseData.data.results
+          pagination = responseData.data.pagination
+        }
+      } else if (responseData.results && Array.isArray(responseData.results)) {
+        rawUsers = responseData.results
+        pagination = responseData.pagination
       }
-    } else if (responseData.results && Array.isArray(responseData.results)) {
-      rawUsers = responseData.results
-    }
+      
+      // Check pagination metadata
+      if (pagination) {
+        totalPages = pagination.totalPages || pagination.total_pages || 1
+        const total = pagination.total || pagination.totalUsers || 0
+        console.log(`[getUsers] Page ${page}/${totalPages}, total users: ${total}`)
+      }
+      
+      if (rawUsers.length === 0) break
+      allRawUsers.push(...rawUsers)
+      page++
+    } while (page <= totalPages)
     
-    console.log('[getUsers] Raw users extracted:', rawUsers.length)
+    console.log('[getUsers] Total raw users extracted:', allRawUsers.length)
     
-    console.log('[getUsers] Raw users extracted:', rawUsers)
+    // Deduplicate users by ID (pagination may return duplicates)
+    const uniqueUsers = allRawUsers.filter((user, index, self) => 
+      index === self.findIndex((u) => u.id === user.id)
+    )
+    console.log('[getUsers] Unique users after deduplication:', uniqueUsers.length)
+    
+    // Debug: log all unique roles found
+    const roleCounts: Record<string, number> = {}
+    uniqueUsers.forEach((u: any) => {
+      const r = Array.isArray(u.roles) ? u.roles[0] : u.roles
+      roleCounts[`role_${r}`] = (roleCounts[`role_${r}`] || 0) + 1
+    })
+    console.log('[getUsers] Role distribution:', roleCounts)
     
     // Map backend response to frontend User format
-    users = rawUsers.map((user: any) => ({
-      id: user.id || user._id,
-      name: user.firstName && user.lastName 
-        ? `${user.firstName} ${user.lastName}` 
-        : user.name || user.email || 'Unknown',
-      email: user.email || '',
+    const users: User[] = uniqueUsers.map((user: any) => {
+      // Debug logging
+      console.log('[getUsers] Mapping user:', user.email, 'roles:', user.roles, 'role type:', typeof user.roles)
+      
       // Handle roles - backend returns array of role IDs (numbers), convert to role names
-      role: (() => {
-        const roleId = Array.isArray(user.roles) ? user.roles[0] : user.roles
-        const roleIdMap: Record<number, string> = {
-          1: 'admin',
-          2: 'technician',
-          3: 'subject_teacher',
-          4: 'class_teacher',
-          5: 'finance',
-          6: 'student',
-          7: 'student',
-        }
-        return roleIdMap[Number(roleId)] || 'student'
-      })(),
-      status: user.status || 'active',
-      assignedSubjects: user.assignedSubjects || [],
-      createdAt: user.createdAt || user.created_at,
-      updatedAt: user.updatedAt || user.updated_at,
-    }))
+      // API Spec: 1=admin, 2=technician, 3=subject_teacher, 4=class_teacher, 5=finance_staff, 6=reserved, 7-12=student tiers
+      const roleId = Array.isArray(user.roles) ? user.roles[0] : user.roles
+      const roleIdMap: Record<number, string> = {
+        1: 'admin',
+        2: 'technician',
+        3: 'subject_teacher',
+        4: 'class_teacher',
+        5: 'finance_staff',
+        6: 'reserved',
+        7: 'student_js1',
+        8: 'student_js2',
+        9: 'student_js3',
+        10: 'student_ss1',
+        11: 'student_ss2',
+        12: 'student_ss3',
+      }
+      // Consolidate all student tiers (7-12) as 'student' for frontend display
+      const mappedRole = roleIdMap[Number(roleId)] || 'unknown'
+      const isStudentTier = ['student_js1', 'student_js2', 'student_js3', 'student_ss1', 'student_ss2', 'student_ss3'].includes(mappedRole)
+      const displayRole = isStudentTier ? 'student' : mappedRole
+      
+      console.log('[getUsers] Mapped role:', displayRole, 'for roleId:', roleId)
+      
+      // Ensure id exists - use email as fallback
+      const userId = user.id || user._id || user.email || `user_${Math.random().toString(36).substr(2, 9)}`
+      
+      return {
+        id: userId,
+        name: user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.name || user.email || 'Unknown',
+        email: user.email || '',
+        role: displayRole,
+        status: user.status || 'active',
+        assignedSubjects: user.assignedSubjects || [],
+        createdAt: user.createdAt || user.created_at,
+        updatedAt: user.updatedAt || user.updated_at,
+      }
+    })
     
     return users
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Failed to fetch users:', error.response?.data)
-      throw {
-        message: error.response?.data?.message || 'Failed to fetch users',
-        status: error.response?.status,
-      } as ApiError
+  } catch (error: any) {
+    console.error('[getUsers] Error:', error)
+    console.error('[getUsers] Error type:', error.constructor.name)
+    console.error('[getUsers] Error response:', error.response)
+    // Handle both axios errors and regular errors
+    let errorMessage = 'Failed to fetch users'
+    let errorStatus = 500
+    
+    if (error.response?.data) {
+      errorMessage = error.response.data.message || error.response.data.error || JSON.stringify(error.response.data)
+      errorStatus = error.response.status
+    } else if (error.message) {
+      errorMessage = error.message
     }
-    throw error
+    
+    console.error('[getUsers] Error details:', errorMessage, 'status:', errorStatus)
+    throw {
+      message: errorMessage,
+      status: errorStatus,
+    } as ApiError
   }
 }
 
@@ -337,12 +404,31 @@ export async function getUserById(userId: string): Promise<User> {
  */
 export async function getSubjects(): Promise<{ data: Subject[]; pagination?: any }> {
   try {
-    const response = await apiClient.get<{ success: boolean; data: Subject[]; pagination?: any }>('admin/subjects')
-    // Handle wrapped response
-    if (response.data.success !== undefined) {
-      return { data: response.data.data || [], pagination: response.data.pagination }
+    const response = await apiClient.get<any>('admin/subjects')
+    // Handle different response formats from backend
+    let subjectData: Subject[] = []
+    
+    // Case 1: { success: true, data: [...], pagination: ... }
+    if (response.data.success === true && Array.isArray(response.data.data)) {
+      subjectData = response.data.data
     }
-    return { data: Array.isArray(response.data) ? response.data : [] }
+    // Case 2: { data: [...] } (no success flag)
+    else if (response.data.data && Array.isArray(response.data.data)) {
+      subjectData = response.data.data
+    }
+    // Case 3: [...] direct array
+    else if (Array.isArray(response.data)) {
+      subjectData = response.data
+    }
+    // Case 4: { results: [...] }
+    else if (response.data.results && Array.isArray(response.data.results)) {
+      subjectData = response.data.results
+    }
+    
+    console.log('[getSubjects] Raw response:', response.data)
+    console.log('[getSubjects] Parsed subjects:', subjectData.length)
+    
+    return { data: subjectData }
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('Failed to fetch subjects:', error.response?.data)

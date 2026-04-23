@@ -25,16 +25,25 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
+    const authToken = request.cookies.get('auth_token')?.value
 
-    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
+    const authHeader = token 
+      ? `Bearer ${token.replace('Bearer ', '')}` 
+      : (authToken ? `Bearer ${authToken}` : undefined)
 
-    const response = await fetch(`${API_BASE_URL}/api/students/`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
-    })
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/students/`, { headers })
 
     const text = await response.text()
 
@@ -68,27 +77,48 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
+    const authToken = request.cookies.get('auth_token')?.value
 
     console.log('[Students API] Creating student with body:', body)
 
-    const authHeader = token ? `Bearer ${token.replace('Bearer ', '')}` : undefined
+    const authHeader = token 
+      ? `Bearer ${token.replace('Bearer ', '')}` 
+      : (authToken ? `Bearer ${authToken}` : undefined)
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
 
     // Backend /api/students/ expects: email, firstName, lastName, academicYearId, termId
     // But we receive: email, name, password, role from frontend
-    // Let's try creating via /api/users/ first as it's more flexible
+    // Convert role string to role ID - backend expects numbers, not strings
+    const roleIdMap: Record<string, number> = {
+      'student': 7,
+      'subject_teacher': 3,
+      'class_teacher': 4,
+      'admin': 1,
+      'technician': 2,
+      'finance': 5,
+    }
+    const roleId = roleIdMap[body.role] || 7  // Default to student (7)
+
     const userResponse = await fetch(`${API_BASE_URL}/api/users/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
+      headers,
       body: JSON.stringify({
         email: body.email,
         firstName: body.name?.split(' ')[0] || body.name,
         lastName: body.name?.split(' ').slice(1).join(' ') || '',
         password: body.password,
-        roles: ['student'],
+        roles: [roleId],  // Send as number, not string
       }),
     })
 

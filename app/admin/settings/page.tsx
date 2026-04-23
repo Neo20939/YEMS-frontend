@@ -4,8 +4,10 @@ import * as React from "react"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { cn } from "@/lib/utils"
 import { getAcademicYears, getCurrentAcademicYear, AcademicYear } from "@/lib/api/academic-client"
+import TermsSettingsPage from "@/components/admin/settings/TermsSettingsPage"
+import { getAnnouncements, createAnnouncement, deleteAnnouncement, Announcement } from "@/lib/api/announcements-client"
 
-type TabType = 'general' | 'email' | 'security' | 'appearance' | 'notifications' | 'backup'
+type TabType = 'general' | 'academic' | 'email' | 'security' | 'appearance' | 'notifications' | 'backup'
 
 interface SystemSettings {
   // General
@@ -130,6 +132,18 @@ export default function SystemSettingsPage() {
   const [academicYearsList, setAcademicYearsList] = React.useState<AcademicYear[]>([])
   const [currentAcademicYear, setCurrentAcademicYear] = React.useState<AcademicYear | null>(null)
   
+  // Announcements state
+  const [announcements, setAnnouncements] = React.useState<Announcement[]>([])
+  const [isLoadingAnnouncements, setIsLoadingAnnouncements] = React.useState(false)
+  const [showAnnouncementForm, setShowAnnouncementForm] = React.useState(false)
+  const [newAnnouncement, setNewAnnouncement] = React.useState({
+    title: '',
+    message: '',
+    severity: 'info' as 'info' | 'warning' | 'critical',
+    audience: 'everyone' as 'everyone' | 'teachers' | 'students' | 'targeted',
+    isActive: true,
+  })
+  
   // Fetch academic years on mount
   React.useEffect(() => {
     async function fetchAcademicData() {
@@ -153,8 +167,25 @@ export default function SystemSettingsPage() {
     fetchAcademicData()
   }, [])
   
+  // Fetch announcements on mount
+  React.useEffect(() => {
+    async function fetchAnnouncements() {
+      setIsLoadingAnnouncements(true)
+      try {
+        const data = await getAnnouncements()
+        setAnnouncements(data || [])
+      } catch (error) {
+        console.error('Failed to fetch announcements:', error)
+      } finally {
+        setIsLoadingAnnouncements(false)
+      }
+    }
+    fetchAnnouncements()
+  }, [])
+  
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'general', label: 'General', icon: 'settings' },
+    { id: 'academic', label: 'Academic', icon: 'school' },
     { id: 'email', label: 'Email', icon: 'email' },
     { id: 'security', label: 'Security', icon: 'security' },
     { id: 'appearance', label: 'Appearance', icon: 'palette' },
@@ -184,6 +215,53 @@ export default function SystemSettingsPage() {
     if (confirm('Are you sure you want to reset all settings to defaults?')) {
       setSettings(defaultSettings)
       setHasChanges(true)
+    }
+  }
+  
+  // Create announcement
+  const handleCreateAnnouncement = async () => {
+    if (!newAnnouncement.title.trim() || !newAnnouncement.message.trim()) {
+      alert('Please enter a title and message')
+      return
+    }
+    try {
+      setIsSaving(true)
+      await createAnnouncement({
+        title: newAnnouncement.title,
+        message: newAnnouncement.message,
+        severity: newAnnouncement.severity,
+        audience: newAnnouncement.audience,
+        isActive: newAnnouncement.isActive,
+      })
+      // Refresh announcements list
+      const data = await getAnnouncements()
+      setAnnouncements(data || [])
+      // Reset form
+      setNewAnnouncement({
+        title: '',
+        message: '',
+        severity: 'info',
+        audience: 'everyone',
+        isActive: true,
+      })
+      setShowAnnouncementForm(false)
+    } catch (error: any) {
+      console.error('Failed to create announcement:', error)
+      alert(error.message || 'Failed to create announcement')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+  
+  // Delete announcement
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return
+    try {
+      await deleteAnnouncement(id)
+      setAnnouncements(prev => prev.filter(a => a.id !== id))
+    } catch (error: any) {
+      console.error('Failed to delete announcement:', error)
+      alert(error.message || 'Failed to delete announcement')
     }
   }
   
@@ -296,6 +374,9 @@ export default function SystemSettingsPage() {
             </div>
           </div>
         )
+        
+      case 'academic':
+        return <TermsSettingsPage />
         
       case 'email':
         return (
@@ -567,103 +648,189 @@ export default function SystemSettingsPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Notification Settings</h3>
-              <p className="text-sm text-slate-500 mb-6">Configure how and when users receive notifications</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Announcements</h3>
+              <p className="text-sm text-slate-500 mb-6">Create and manage banner announcements for users</p>
             </div>
             
-            <div className="space-y-4">
-              {/* Enable Email Alerts */}
-              <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-stone-800 rounded-xl">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Email Alerts</p>
-                  <p className="text-xs text-slate-500">Send notifications via email</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.enableEmailAlerts}
-                    onChange={(e) => handleSettingChange('enableEmailAlerts', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-              </div>
-              
-              {/* Enable SMS Alerts */}
-              <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-stone-800 rounded-xl">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">SMS Alerts</p>
-                  <p className="text-xs text-slate-500">Send notifications via SMS</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.enableSmsAlerts}
-                    onChange={(e) => handleSettingChange('enableSmsAlerts', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-              </div>
-              
-              {/* Enable Push Notifications */}
-              <div className="flex items-center justify-between p-4 bg-stone-50 dark:bg-stone-800 rounded-xl">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Push Notifications</p>
-                  <p className="text-xs text-slate-500">Browser push notifications</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.enablePushNotifications}
-                    onChange={(e) => handleSettingChange('enablePushNotifications', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-              </div>
-            </div>
+            {/* Create New Announcement Button */}
+            {!showAnnouncementForm && (
+              <button
+                onClick={() => setShowAnnouncementForm(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors text-sm"
+              >
+                <span className="material-symbols-outlined text-lg">add</span>
+                Create Announcement
+              </button>
+            )}
             
-            {/* Alert Triggers */}
+            {/* Announcement Form */}
+            {showAnnouncementForm && (
+              <div className="bg-stone-50 dark:bg-stone-800 rounded-xl p-6 space-y-4">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">New Announcement</h4>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={newAnnouncement.title}
+                    onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter announcement title"
+                    className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    value={newAnnouncement.message}
+                    onChange={(e) => setNewAnnouncement(prev => ({ ...prev, message: e.target.value }))}
+                    placeholder="Enter announcement message"
+                    rows={4}
+                    className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100 resize-none"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Severity
+                    </label>
+                    <select
+                      value={newAnnouncement.severity}
+                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, severity: e.target.value as any }))}
+                      className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+                    >
+                      <option value="info">Info</option>
+                      <option value="warning">Warning</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Audience
+                    </label>
+                    <select
+                      value={newAnnouncement.audience}
+                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, audience: e.target.value as any }))}
+                      className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-slate-100"
+                    >
+                      <option value="everyone">Everyone</option>
+                      <option value="teachers">Teachers Only</option>
+                      <option value="students">Students Only</option>
+                      <option value="targeted">Targeted</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="announcementActive"
+                    checked={newAnnouncement.isActive}
+                    onChange={(e) => setNewAnnouncement(prev => ({ ...prev, isActive: e.target.checked }))}
+                    className="size-5 rounded border-stone-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="announcementActive" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Active immediately
+                  </label>
+                </div>
+                
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleCreateAnnouncement}
+                    disabled={isSaving}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors text-sm disabled:opacity-50"
+                  >
+                    {isSaving ? 'Creating...' : 'Create Announcement'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAnnouncementForm(false)
+                      setNewAnnouncement({
+                        title: '',
+                        message: '',
+                        severity: 'info',
+                        audience: 'everyone',
+                        isActive: true,
+                      })
+                    }}
+                    className="px-4 py-2 border border-stone-200 dark:border-stone-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* Existing Announcements List */}
             <div className="border-t border-stone-200 dark:border-stone-800 pt-6">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Alert Triggers</h4>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.alertOnUserRegistration}
-                    onChange={(e) => handleSettingChange('alertOnUserRegistration', e.target.checked)}
-                    className="size-5 rounded border-stone-300 text-primary focus:ring-primary"
-                  />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Alert on new user registration
-                  </span>
-                </label>
-                
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.alertOnExamCreation}
-                    onChange={(e) => handleSettingChange('alertOnExamCreation', e.target.checked)}
-                    className="size-5 rounded border-stone-300 text-primary focus:ring-primary"
-                  />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Alert on exam creation
-                  </span>
-                </label>
-                
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.alertOnFailedLogins}
-                    onChange={(e) => handleSettingChange('alertOnFailedLogins', e.target.checked)}
-                    className="size-5 rounded border-stone-300 text-primary focus:ring-primary"
-                  />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Alert on failed login attempts
-                  </span>
-                </label>
-              </div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Existing Announcements</h4>
+              
+              {isLoadingAnnouncements ? (
+                <p className="text-sm text-slate-500">Loading...</p>
+              ) : announcements.length === 0 ? (
+                <p className="text-sm text-slate-500">No announcements yet. Create one to get started.</p>
+              ) : (
+                <div className="space-y-3">
+                  {announcements.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      className={cn(
+                        "p-4 rounded-xl border",
+                        announcement.severity === 'critical' ? "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800" :
+                        announcement.severity === 'warning' ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800" :
+                        "bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={cn(
+                              "text-xs font-semibold px-2 py-0.5 rounded-full uppercase",
+                              announcement.severity === 'critical' ? "bg-rose-200 text-rose-800 dark:bg-rose-800 dark:text-rose-200" :
+                              announcement.severity === 'warning' ? "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200" :
+                              "bg-stone-200 text-stone-800 dark:bg-stone-700 dark:text-stone-300"
+                            )}>
+                              {announcement.severity}
+                            </span>
+                            <span className={cn(
+                              "text-xs font-semibold px-2 py-0.5 rounded-full",
+                              announcement.audience === 'everyone' ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" :
+                              announcement.audience === 'teachers' ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" :
+                              announcement.audience === 'students' ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                              "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                            )}>
+                              {announcement.audience}
+                            </span>
+                            {!announcement.isActive && (
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-300 text-stone-600">
+                                Inactive
+                              </span>
+                            )}
+                          </div>
+                          <h5 className="font-semibold text-slate-900 dark:text-slate-100">{announcement.title}</h5>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-wrap">{announcement.message}</p>
+                          <p className="text-xs text-slate-500 mt-2">
+                            Created: {announcement.createdAt ? new Date(announcement.createdAt).toLocaleString() : 'Unknown'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteAnnouncement(announcement.id)}
+                          className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                          title="Delete announcement"
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )
