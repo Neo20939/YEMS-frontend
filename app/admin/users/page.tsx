@@ -84,11 +84,13 @@ export default function UserManagementPage() {
       }
 
       console.log('Creating user with data:', userData)
+      const nameParts = userData.name?.split(' ') || []
       const newUser = await createUser({
         email: userData.email,
-        name: userData.name,
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
         password: userData.password,
-        role: userData.role,
+        roles: [1], // Default to admin role, adjust as needed
       })
       console.log('User created successfully:', newUser)
       setUsers([...users, newUser])

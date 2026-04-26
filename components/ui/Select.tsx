@@ -97,8 +97,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       setSearchQuery("");
     };
 
-    const handleClear = (e: React.MouseEvent) => {
-      e.stopPropagation();
+    const handleClear = (e?: React.MouseEvent) => {
+      e?.stopPropagation();
       if (!isControlled) {
         setSelectedValue(undefined);
       }

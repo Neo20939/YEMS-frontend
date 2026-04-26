@@ -127,8 +127,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     if (!state.exam || !user) return
     
     try {
-      const answersArray = Array.from(state.answers.values())
-      await submitExamApi(state.exam.id, user.id, answersArray)
+      await submitExamApi(state.exam.id)
       setState((prev) => ({ ...prev, isSubmitting: false, isExamStarted: false }))
       
       // Redirect to results page or dashboard
@@ -159,7 +158,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
       // Check for existing progress
       if (user) {
-        const progress = await getExamProgress(examId, user.id)
+        const progress = await getExamProgress(examId)
         if (progress && progress.answers) {
           // Load existing answers
           const answersMap = new Map<string, SavedAnswer>()
@@ -220,8 +219,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isSubmitting: true }))
 
     try {
-      const answersArray = Array.from(state.answers.values())
-      await submitExamApi(state.exam.id, user.id, answersArray)
+      await submitExamApi(state.exam.id)
       
       setState((prev) => ({ ...prev, isSubmitting: false, isExamStarted: false }))
       

@@ -69,10 +69,8 @@ export default function ClassFormModal({
           getClassLevels(),
           getAcademicYears()
         ]);
-        // Handle both array response and object response { data: [...] }
-        setClassLevels(Array.isArray(levels) ? levels : levels?.data || []);
-        const yearsData = Array.isArray(years) ? years : years?.data || [];
-        setAcademicYearsData(yearsData);
+        setClassLevels(levels);
+        setAcademicYearsData(years.data);
       } catch (error) {
         console.error('Failed to load class levels or academic years:', error);
         setClassLevels([]);

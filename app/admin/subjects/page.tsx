@@ -52,8 +52,8 @@ export default function AdminSubjectsPage() {
     setError(null)
     try {
       // Pass signal to API call if supported
-      const data = await getSubjects()
-      setSubjects(data)
+      const response = await getSubjects()
+      setSubjects(response.data)
     } catch (err: any) {
       // Ignore abort errors - they're expected when component unmounts or request is cancelled
       if (err.name === 'AbortError' || err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {

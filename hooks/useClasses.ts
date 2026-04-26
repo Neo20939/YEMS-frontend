@@ -122,9 +122,9 @@ export function useClasses(): UseClassesReturn {
       try {
         const page = filters?.page || 1;
         const result = await classService.getClasses({
-          ...filters,
+          ...(filters as any),
           page,
-          limit: filters?.pageSize || pagination.pageSize,
+          limit: pagination.pageSize,
         });
 
         if (result.success) {
@@ -139,7 +139,7 @@ export function useClasses(): UseClassesReturn {
             max_capacity: c.capacity || 0,
             form_teacher_id: c.formTeacherId,
             form_teacher_name: c.formTeacherName,
-            status: c.isActive ? 'active' : 'archived',
+            status: (c.isActive ? 'active' : 'archived') as 'active' | 'archived',
             enrolled_count: c.enrolledCount || 0,
             created_at: c.createdAt,
             updated_at: c.updatedAt,

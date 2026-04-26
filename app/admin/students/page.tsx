@@ -72,12 +72,17 @@ export default function StudentManagementPage() {
       }
 
       console.log('Creating student with data:', userData)
-      const newStudent = await createUser({
-        email: userData.email,
-        name: userData.name,
-        password: userData.password,
-        role: 'student',
-      }, 'students')
+       const nameParts = userData.name.split(' ');
+       const firstName = nameParts[0] || '';
+       const lastName = nameParts.slice(1).join(' ') || '';
+
+       const newStudent = await createUser({
+         email: userData.email,
+         firstName: firstName,
+         lastName: lastName,
+         password: userData.password,
+         roles: [6], // student role id
+       }, 'students')
       console.log('Student created successfully:', newStudent)
       setStudents([...students, newStudent])
       setIsModalOpen(false)
