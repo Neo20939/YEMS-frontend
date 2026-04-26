@@ -24,14 +24,22 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
     const url = `${API_BASE_URL}/api/academic/academic-years`
+
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    }
+    if (token) headers['Authorization'] = token.replace('Bearer ', '')
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
+    }
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        ...(token ? { Authorization: token.replace('Bearer ', '') } : {}),
-      },
+      headers,
     })
 
     const contentType = response.headers.get('content-type')
@@ -61,14 +69,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (token) headers['Authorization'] = token.replace('Bearer ', '')
+    if (sessionCookie) headers['Cookie'] = `yems_session=${sessionCookie}`
 
     const response = await fetch(`${API_BASE_URL}/api/academic/academic-years`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(token ? { Authorization: token.replace('Bearer ', '') } : {}),
-      },
+      headers,
       body: JSON.stringify(body),
     })
 

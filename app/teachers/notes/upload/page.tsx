@@ -11,7 +11,7 @@ import {
   downloadNote,
   getAvailableSubjects,
   getAvailableClassGrades,
-  getTeacherAssignedSubjects,
+  getTeacherAssignedSubjectsAsync,
   canTeacherManageSubject,
 } from "@/lib/api/notes-client"
 import type { Note, NoteSubject, NoteClassGrade, NoteTerm, CreateNoteRequest } from "@/lib/api/types"
@@ -68,16 +68,24 @@ export default function NotesUploadPage() {
   // RBAC state
   const [assignedSubjects, setAssignedSubjects] = useState<string[]>([])
   const [hasNoSubjects, setHasNoSubjects] = useState(false)
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true)
 
   // Load available options and notes on mount
   useEffect(() => {
     loadOptions()
     loadNotes()
-    loadAssignedSubjects()
   }, [])
 
-  const loadAssignedSubjects = () => {
-    const subjects = getTeacherAssignedSubjects()
+  // Load assigned subjects after user is available
+  useEffect(() => {
+    if (user) {
+      loadAssignedSubjects()
+    }
+  }, [user])
+
+  const loadAssignedSubjects = async () => {
+    setIsLoadingSubjects(true)
+    const subjects = await getTeacherAssignedSubjectsAsync()
     setAssignedSubjects(subjects)
     
     // Check if teacher has no assigned subjects
@@ -86,6 +94,7 @@ export default function NotesUploadPage() {
     } else {
       setHasNoSubjects(false)
     }
+    setIsLoadingSubjects(false)
   }
 
   const loadOptions = async () => {

@@ -10,11 +10,12 @@ interface ToastProps {
   message: string
   type: ToastType
   duration?: number
-  onClose: (id: string) => void
+  onClose?: (id: string) => void
 }
 
 export function Toast({ id, message, type, duration = 5000, onClose }: ToastProps) {
   useEffect(() => {
+    if (!onClose) return
     const timer = setTimeout(() => {
       onClose(id)
     }, duration)
@@ -53,7 +54,7 @@ export function Toast({ id, message, type, duration = 5000, onClose }: ToastProp
       <Icon className={`w-5 h-5 flex-shrink-0 ${iconColors[type]}`} />
       <p className="text-sm font-medium flex-1">{message}</p>
       <button
-        onClick={() => onClose(id)}
+        onClick={() => onClose && onClose(id)}
         className="p-1 hover:bg-black/5 rounded transition-colors"
       >
         <X className="w-4 h-4" />
@@ -64,7 +65,7 @@ export function Toast({ id, message, type, duration = 5000, onClose }: ToastProp
 
 interface ToastContainerProps {
   toasts: Array<{ id: string; message: string; type: ToastType }>
-  onClose: (id: string) => void
+  onClose?: (id: string) => void
 }
 
 export function ToastContainer({ toasts, onClose }: ToastContainerProps) {

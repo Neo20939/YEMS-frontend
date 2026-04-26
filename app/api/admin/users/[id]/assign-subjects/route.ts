@@ -28,39 +28,58 @@ export async function POST(
   try {
     const body = await request.json()
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
+    const authToken = request.cookies.get('auth_token')?.value
     const { id: userId } = await params
     const { subjectIds } = body
 
-    console.log('Assigning subjects to teacher:', userId, subjectIds)
+    console.log('[Assign Subjects API] Assigning subjects to teacher:', userId, subjectIds)
 
-    // Try backend first
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/assign-subjects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: token } : {}),
-        },
-        body: JSON.stringify({ subjectIds }),
-      })
+    // Build headers with auth
+    const authHeader = token 
+      ? `Bearer ${token.replace('Bearer ', '')}` 
+      : (authToken ? `Bearer ${authToken}` : undefined)
 
-      if (response.ok) {
-        const data = await response.json()
-        return NextResponse.json(data)
-      }
-    } catch (backendError) {
-      console.log('Backend unavailable, using localStorage fallback')
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
     }
 
-    // Fallback: store in localStorage
-    // Note: This only works client-side via browser
-    return NextResponse.json({
-      id: userId,
-      assignedSubjects: subjectIds,
-      message: 'Subjects assigned (demo mode)',
+    const response = await fetch(`${API_BASE_URL}/api/teachers/${userId}/subjects`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ subjectIds }),
     })
+
+    const text = await response.text()
+    console.log('[Assign Subjects API] Backend response:', text.substring(0, 500))
+
+    if (response.ok) {
+      let data
+      try {
+        data = JSON.parse(text)
+      } catch {
+        return NextResponse.json({ success: true })
+      }
+      return NextResponse.json({ success: true, data })
+    }
+
+    // If backend fails, return error
+    let errorData
+    try {
+      errorData = JSON.parse(text)
+    } catch {
+      errorData = { error: 'Failed to assign subjects' }
+    }
+    return NextResponse.json(errorData, { status: response.status })
   } catch (error: any) {
-    console.error('Assign subjects error:', error)
+    console.error('[Assign Subjects API] Assign subjects error:', error)
     return NextResponse.json(
       { error: 'Failed to assign subjects', message: error.message },
       { status: 500 }
@@ -75,32 +94,94 @@ export async function GET(
 ) {
   try {
     const token = request.headers.get('authorization')
+    const sessionCookie = request.cookies.get('yems_session')?.value
+    const authToken = request.cookies.get('auth_token')?.value
     const { id: userId } = await params
 
-    console.log('Getting assigned subjects for teacher:', userId)
+    console.log('[Assign Subjects API] Getting assigned subjects for teacher:', userId)
 
-    // Try backend first
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/subjects`, {
-        headers: {
-          ...(token ? { Authorization: token } : {}),
-        },
-      })
+    // Build headers with auth
+    const authHeader = token 
+      ? `Bearer ${token.replace('Bearer ', '')}` 
+      : (authToken ? `Bearer ${authToken}` : undefined)
 
-      if (response.ok) {
-        const data = await response.json()
-        return NextResponse.json(data)
-      }
-    } catch (backendError) {
-      console.log('Backend unavailable, using localStorage fallback')
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    }
+    if (authHeader) headers['Authorization'] = authHeader
+    if (sessionCookie) {
+      // Use x-session-token header for cross-site auth (SameSite=Strict fix)
+      headers['x-session-token'] = sessionCookie
+      headers['Cookie'] = `yems_session=${sessionCookie}`
     }
 
-    // Fallback: return empty array (will be populated client-side)
-    return NextResponse.json([])
+    const response = await fetch(`${API_BASE_URL}/api/teachers/${userId}/subjects`, {
+      method: 'GET',
+      headers,
+    })
+
+    const text = await response.text()
+    console.log('[Assign Subjects API] Backend response:', text.substring(0, 500))
+
+    if (response.ok) {
+      let data
+      try {
+        data = JSON.parse(text)
+      } catch {
+        return NextResponse.json({ success: true, data: [] })
+      }
+      return NextResponse.json({ success: true, data })
+    }
+
+    // If backend fails, return empty array
+    return NextResponse.json({ success: true, data: [] })
   } catch (error: any) {
-    console.error('Get subjects error:', error)
+    console.error('[Assign Subjects API] Get subjects error:', error)
     return NextResponse.json(
       { error: 'Failed to get subjects', message: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/admin/users/:id/assign-subjects - Remove subject assignment
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const body = await request.json()
+    const token = request.headers.get('authorization')
+    const { id: userId } = await params
+    const { subjectIds } = body
+
+    console.log('[Assign Subjects API] Removing subjects from teacher:', userId, subjectIds)
+
+    // Build headers with auth
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (token) headers['Authorization'] = token.replace('Bearer ', '')
+
+    const response = await fetch(`${API_BASE_URL}/api/teachers/${userId}/subjects`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({ subjectIds }),
+    })
+
+    if (response.ok) {
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to remove subjects' },
+      { status: response.status }
+    )
+  } catch (error: any) {
+    console.error('[Assign Subjects API] Remove subjects error:', error)
+    return NextResponse.json(
+      { error: 'Failed to remove subjects', message: error.message },
       { status: 500 }
     )
   }

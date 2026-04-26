@@ -163,12 +163,12 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                   tabIndex={0}
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleClear()
+                    handleClear(e)
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.stopPropagation()
-                      handleClear()
+                      handleClear(e as unknown as React.MouseEvent)
                     }
                   }}
                   className="h-6 w-6 inline-flex items-center justify-center text-slate-400 hover:text-slate-600 cursor-pointer"

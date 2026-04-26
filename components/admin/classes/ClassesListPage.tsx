@@ -7,7 +7,7 @@ import { ClassesTable } from "@/components/admin/classes/ClassesTable";
 import { ClassFiltersBar } from "@/components/admin/classes/ClassFiltersBar";
 import ClassFormModal from "@/components/admin/classes/ClassFormModal";
 import { Pagination, Button, ToastContainer, useToast, Modal, Select } from "@/components/ui";
-import { Plus, Archive, Trash2, Download } from "lucide-react";
+import { Plus, Archive, Trash2, Download, UserPlus } from "lucide-react";
 import type { Class } from "@/types/class";
 import classService from "@/lib/classService";
 import { getUsers, User } from "@/lib/api/admin-client";
@@ -93,13 +93,8 @@ export default function ClassesListPage() {
         setClassTeacherAssignments(assignments);
       } catch (error) {
         console.error("Failed to fetch data:", error);
-        // Fallback to mock data if API fails
-        const mockTeachers = [
-          { id: "1", name: "John Doe", email: "john.doe@school.edu" },
-          { id: "2", name: "Jane Smith", email: "jane.smith@school.edu" },
-          { id: "3", name: "Mike Johnson", email: "mike.johnson@school.edu" },
-        ];
-        setTeachers(mockTeachers);
+        // Leave empty on error - don't use mock data
+        setTeachers([]);
         setAcademicYearsList([]);
       }
     };
@@ -224,7 +219,7 @@ export default function ClassesListPage() {
 
   // Navigation handlers
   const handleView = (classItem: Class) => {
-    window.location.href = `/admin/classes/${classItem.id}`;
+    window.location.href = `/admin/classes/${classItem.class_code}`;
   };
 
   const handleEdit = (classItem: Class) => {
@@ -261,15 +256,15 @@ export default function ClassesListPage() {
   };
 
   const handleManageSubjects = (classItem: Class) => {
-    window.location.href = `/admin/classes/${classItem.id}/subjects`;
+    window.location.href = `/admin/classes/${classItem.class_code}/subjects`;
   };
 
   const handleViewTimetable = (classItem: Class) => {
-    window.location.href = `/admin/classes/${classItem.id}/timetable`;
+    window.location.href = `/admin/classes/${classItem.class_code}/timetable`;
   };
 
   const handleManageEnrollment = (classItem: Class) => {
-    window.location.href = `/admin/classes/${classItem.id}/enrollment`;
+    window.location.href = `/admin/classes/${classItem.class_code}/enrollment`;
   };
 
   const handleAssignFormTeacher = (classItem: Class) => {
@@ -318,9 +313,9 @@ export default function ClassesListPage() {
           </div>
 
           <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-            <Plus className="w-5 h-5" />
-            New Class
-          </Button>
+              <Plus className="w-5 h-5" />
+              New Class
+            </Button>
         </div>
 
         {/* Bulk Actions Toolbar */}

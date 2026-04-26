@@ -144,20 +144,20 @@ export function getStoredUser(): { id: string; email: string; name: string; role
     if (userStr) {
       try {
         const user = JSON.parse(userStr)
-        // Map role ID to role name if needed
+        // Map role ID to role name if needed (matches API spec message.txt lines 65-78)
         const roleIdMap: Record<string, string> = {
           '1': 'admin',
           '2': 'technician',
-          '3': 'teacher',
+          '3': 'subject_teacher',
           '4': 'class_teacher',
-          '5': 'finance',
-          '6': 'admin',
-          '7': 'student',
-          '8': 'student',
-          '9': 'student',
-          '10': 'student',
-          '11': 'student',
-          '12': 'student',
+          '5': 'finance_staff',
+          '6': 'reserved',
+          '7': 'student_js1',
+          '8': 'student_js2',
+          '9': 'student_js3',
+          '10': 'student_ss1',
+          '11': 'student_ss2',
+          '12': 'student_ss3',
         }
         // If role is a number-like string, map it
         if (roleIdMap[user.role]) {
@@ -205,10 +205,10 @@ export function getRedirectPathByRole(role: string): string {
   }
 
   // Teacher roles (subject teachers)
-  if (normalizedRole === 'teacher' ||
+  if (normalizedRole === 'subject_teacher' ||
+      normalizedRole === 'teacher' ||
       normalizedRole === 'professor' ||
-      normalizedRole === 'instructor' ||
-      normalizedRole === 'subject_teacher') {
+      normalizedRole === 'instructor') {
     return '/teachers/dashboard'
   }
 
@@ -219,15 +219,21 @@ export function getRedirectPathByRole(role: string): string {
   }
 
   // Finance role
-  if (normalizedRole === 'finance' ||
-      normalizedRole === 'finance_staff') {
+  if (normalizedRole === 'finance_staff' ||
+      normalizedRole === 'finance') {
     return '/finance/dashboard'
   }
 
-  // Student role (all student variants go to student dashboard)
+  // Student role (all student tiers go to student dashboard)
   if (normalizedRole === 'student' ||
-      normalizedRole.startsWith('student_')) {
+      normalizedRole.startsWith('student_js') ||
+      normalizedRole.startsWith('student_ss')) {
     return '/dashboard'
+  }
+
+  // Reserved role - redirect to admin
+  if (normalizedRole === 'reserved') {
+    return '/admin'
   }
 
   // Default to student dashboard for unknown roles

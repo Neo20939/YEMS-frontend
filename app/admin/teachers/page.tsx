@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import UserModal from "@/components/admin/UserModal"
 import UserTable from "@/components/admin/UserTable"
 import TeacherSubjectAssignment from "@/components/admin/TeacherSubjectAssignment"
+import ClassTeacherAssignment from "@/components/admin/ClassTeacherAssignment"
 import ViewAssignedSubjects from "@/components/admin/ViewAssignedSubjects"
 import { getUsers, createUser, updateUserRole, deleteUser, User } from "@/lib/api/admin-client"
 import { useUser } from "@/contexts/UserContext"
@@ -30,9 +31,11 @@ export default function TeacherManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubjectAssignmentOpen, setIsSubjectAssignmentOpen] = useState(false)
   const [isViewSubjectsOpen, setIsViewSubjectsOpen] = useState(false)
+  const [isClassAssignmentOpen, setIsClassAssignmentOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [assigningSubjectUser, setAssigningSubjectUser] = useState<User | null>(null)
   const [viewingSubjectUser, setViewingSubjectUser] = useState<User | null>(null)
+  const [assigningClassUser, setAssigningClassUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
@@ -65,9 +68,11 @@ export default function TeacherManagementPage() {
   }
 
   const filteredTeachers = Array.isArray(teachers) ? teachers.filter((teacher) => {
+    const teacherName = teacher.name || ''
+    const teacherEmail = teacher.email || ''
     const matchesSearch =
-      teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      teacher.email.toLowerCase().includes(searchQuery.toLowerCase())
+      teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      teacherEmail.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || (teacher.status || 'active') === statusFilter
     return matchesSearch && matchesStatus
   }) : []
@@ -165,6 +170,11 @@ export default function TeacherManagementPage() {
   const handleViewSubjects = (teacher: User) => {
     setViewingSubjectUser(teacher)
     setIsViewSubjectsOpen(true)
+  }
+
+  const handleAssignClass = (teacher: User) => {
+    setAssigningClassUser(teacher)
+    setIsClassAssignmentOpen(true)
   }
 
   const openAddModal = () => {
@@ -311,6 +321,7 @@ export default function TeacherManagementPage() {
           onDelete={handleDeleteTeacher}
           onAssignSubjects={handleAssignSubjects}
           onViewSubjects={handleViewSubjects}
+          onAssignClass={handleAssignClass}
         />
 
         {/* Pagination Info */}
@@ -360,6 +371,18 @@ export default function TeacherManagementPage() {
           onClose={() => {
             setIsViewSubjectsOpen(false)
             setViewingSubjectUser(null)
+          }}
+        />
+      )}
+
+      {/* Class Teacher Assignment Modal */}
+      {assigningClassUser && (
+        <ClassTeacherAssignment
+          teacher={assigningClassUser}
+          onClose={() => {
+            setIsClassAssignmentOpen(false)
+            setAssigningClassUser(null)
+            loadTeachers()
           }}
         />
       )}

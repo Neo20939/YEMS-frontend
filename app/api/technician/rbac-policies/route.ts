@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     }
     if (yemsSession) {
       headers['Cookie'] = `yems_session=${yemsSession}`
+      headers['x-session-token'] = yemsSession
     }
 
     const response = await fetch(`${API_BASE_URL}/technician/rbac/policies`, {

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import classService from '@/lib/classService';
+import { getClass } from '@/lib/api/academic-client';
 import type {
   Class,
   ClassFilters,
@@ -79,7 +80,7 @@ interface UseClassesReturn {
   generateTimetable: (classId: string) => Promise<TimetableSlot[] | null>;
 
   // Enrollment
-  enrollStudent: (classId: string, input: EnrollmentInput) => Promise<StudentEnrollment | null>;
+  enrollStudent: (studentId: string, input: EnrollmentInput) => Promise<StudentEnrollment | null>;
   removeStudent: (classId: string, studentId: string) => Promise<boolean>;
   bulkEnrollStudents: (
     classId: string,
@@ -252,23 +253,23 @@ export function useClasses(): UseClassesReturn {
     [refreshClasses, toast]
   );
 
-  // Archive class
-  const archiveClass = useCallback(
-    async (classId: string, archive: boolean): Promise<Class | null> => {
-      try {
-        const result = await classService.updateClass(classId, { status: archive ? 'archived' : 'active' });
-        toast.success(archive ? 'Class archived' : 'Class restored');
-        await refreshClasses();
-        return result;
-      } catch (err: unknown) {
-        const errorMessage =
-          err instanceof Error && 'message' in err ? err.message : 'Failed to archive class';
-        toast.error(errorMessage);
-        return null;
-      }
-    },
-    [refreshClasses, toast]
-  );
+   // Archive class
+   const archiveClass = useCallback(
+     async (classId: string, archive: boolean): Promise<Class | null> => {
+       try {
+         const result = await classService.updateClass(classId, { isActive: !archive });
+         toast.success(archive ? 'Class archived' : 'Class restored');
+         await refreshClasses();
+         return result;
+       } catch (err: unknown) {
+         const errorMessage =
+           err instanceof Error && 'message' in err ? err.message : 'Failed to archive class';
+         toast.error(errorMessage);
+         return null;
+       }
+     },
+     [refreshClasses, toast]
+   );
 
   // Duplicate class
   const duplicateClass = useCallback(
@@ -290,21 +291,31 @@ export function useClasses(): UseClassesReturn {
     [refreshClasses, toast]
   );
 
-  // Fetch class details
-  const fetchClassDetails = useCallback(async (classId: string) => {
-    setDetailsLoading(true);
-    try {
-      const result = await classService.getClassDetails(classId);
-      setClassDetails(result);
-      setSelectedClass(result.class);
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error && 'message' in err ? err.message : 'Failed to fetch class details';
-      toast.error(errorMessage);
-    } finally {
-      setDetailsLoading(false);
-    }
-  }, [toast]);
+   // Fetch class details
+   const fetchClassDetails = useCallback(async (classId: string) => {
+     setDetailsLoading(true);
+     try {
+       // Fetch class + students in parallel
+       const [classResult, studentsResult] = await Promise.all([
+         classService.getClassById(classId),
+         classService.getClassStudents(classId).catch(() => []), // Students endpoint may not exist yet
+       ]);
+
+       setClassDetails({
+         class: classResult,
+         students: studentsResult,
+         subjects: [],
+         timetable: [],
+       });
+       setSelectedClass(classResult);
+     } catch (err: unknown) {
+       const errorMessage =
+         err instanceof Error && 'message' in err ? err.message : 'Failed to fetch class details';
+       toast.error(errorMessage);
+     } finally {
+       setDetailsLoading(false);
+     }
+   }, [toast]);
 
   // Refresh class details
   const refreshClassDetails = useCallback(async () => {
@@ -479,10 +490,12 @@ export function useClasses(): UseClassesReturn {
   );
 
   // Enroll student
+  // api.md Section 5.4: POST /api/students/:id/enroll with { classId, termId, academicYearId }
   const enrollStudent = useCallback(
-    async (classId: string, input: EnrollmentInput): Promise<StudentEnrollment | null> => {
+    async (studentId: string, input: EnrollmentInput): Promise<StudentEnrollment | null> => {
       try {
-        const result = await classService.enrollStudent(classId, input);
+        // Pass studentId and enrollment data to the student-centric endpoint
+        const result = await classService.enrollStudent(studentId, input);
         toast.success('Student enrolled successfully');
         await refreshClassDetails();
         return result;
