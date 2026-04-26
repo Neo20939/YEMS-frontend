@@ -10,13 +10,13 @@ export const ROLE_ID_MAP: Record<number, string> = {
   3: 'subject_teacher',
   4: 'class_teacher',
   5: 'finance_staff',
-  6: 'student',
-  7: 'student',
-  8: 'student',
-  9: 'student',
-  10: 'student',
-  11: 'student',
-  12: 'student',
+  6: 'reserved',
+  7: 'student_js1',
+  8: 'student_js2',
+  9: 'student_js3',
+  10: 'student_ss1',
+  11: 'student_ss2',
+  12: 'student_ss3',
 }
 
 /**

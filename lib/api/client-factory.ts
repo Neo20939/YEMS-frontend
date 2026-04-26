@@ -8,7 +8,6 @@ export interface ClientFactoryOptions {
   retries?: number
   withCredentials?: boolean
   headers?: Record<string, string>
-  auth?: 'required' | 'optional' | 'none'
 }
 
 export function createApiClient(options: ClientFactoryOptions = {}) {
@@ -29,23 +28,9 @@ export function createApiClient(options: ClientFactoryOptions = {}) {
   })
 
   client.interceptors.request.use((config) => {
-    if (!config.withCredentials || config.headers?.['Cookie'] === undefined) {
-      const token = getAuthToken()
-      if (token) {
-        config.headers = {
-          ...config.headers,
-          'x-session-token': token,
-        }
-      }
-    }
-    if (config.auth !== 'none') {
-      const token = getAuthToken()
-      if (token) {
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${token}`,
-        }
-      }
+    const token = getAuthToken()
+    if (token) {
+      config.headers['x-session-token'] = token
     }
     return config
   })
@@ -53,11 +38,7 @@ export function createApiClient(options: ClientFactoryOptions = {}) {
   client.interceptors.response.use(
     (response) => response,
     (error) => {
-      console.error('=== API RESPONSE ERROR ===')
-      console.error('URL:', error.config?.url)
-      console.error('Status:', error.response?.status)
-      console.error('Data:', error.response?.data)
-      console.error('Message:', error.message)
+      console.error('API RESPONSE ERROR:', error.config?.url, error.response?.status, error.response?.data)
       return Promise.reject(error)
     }
   )
@@ -66,17 +47,11 @@ export function createApiClient(options: ClientFactoryOptions = {}) {
 }
 
 export function createAuthenticatedClient(options: ClientFactoryOptions = {}) {
-  return createApiClient({
-    ...options,
-    auth: 'required',
-  })
+  return createApiClient({ ...options })
 }
 
 export function createPublicClient(options: ClientFactoryOptions = {}) {
-  return createApiClient({
-    ...options,
-    auth: 'none',
-  })
+  return createApiClient({ ...options, withCredentials: false })
 }
 
 export default createApiClient

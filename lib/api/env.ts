@@ -1,11 +1,15 @@
 export const getApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL
+    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, '')
   }
   if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_API_LOCAL_URL) {
-    return process.env.NEXT_PUBLIC_API_LOCAL_URL
+    return process.env.NEXT_PUBLIC_API_LOCAL_URL.replace(/\/$/, '')
   }
-  return 'http://localhost:80/api'
+  return 'http://localhost/shdhfh@s/api'
+}
+
+export const getApiProxyPath = (): string => {
+  return '/api'
 }
 
 export const getApiTimeout = (): number => {

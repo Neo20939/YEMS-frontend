@@ -12,31 +12,17 @@
 // }
 
 export const AUTH_CONFIG = {
-  // Base URL for the backend API
-  // Backend runs on another PC, tunneled via ngrok
-  // Next.js API routes proxy requests to this backend
-  // Change to production URL when deploying
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev',
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_LOCAL_URL || 'http://localhost/shdhfh@s/api',
 
-  // API Endpoints (relative to baseURL when calling directly, or /api when using Next.js proxy)
-  // When using Next.js proxy (baseURL: '/api'), these should NOT have /api prefix
-  // When calling backend directly (baseURL: ngrok URL), these SHOULD have /api prefix
   endpoints: {
     login: 'auth/login',
     logout: 'auth/logout',
     me: 'auth/me',
   },
 
-  // Request timeout in milliseconds
   timeout: 30000,
-
-  // Number of retry attempts
   retries: 3,
-
-  // Session cookie name (YEMS uses session-based auth, not JWT)
   sessionCookieName: 'yems_session',
-
-  // Token storage key
   tokenStorageKey: 'auth_token',
   refreshTokenStorageKey: 'refresh_token',
   userStorageKey: 'auth_user',

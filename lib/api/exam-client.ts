@@ -5,26 +5,21 @@
  */
 
 import { axios } from '@/lib/axios-shim'
-import { getAuthToken } from './auth-config'
+import { getAuthToken, AUTH_CONFIG } from './auth-config'
 import type { ExamCard } from '@/components/exam'
 
 
-/**
- * Create axios instance with auth interceptors
- */
 const apiClient = axios.create({
   baseURL: '/api',
-  timeout: 60000, // 60 second timeout for exam operations
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 60000,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
-// Add auth token to requests
 apiClient.interceptors.request.use((config: any) => {
   const token = getAuthToken()
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers['x-session-token'] = token
   }
   return config
 })
