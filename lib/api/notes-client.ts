@@ -87,6 +87,10 @@ export function getTeacherAssignedSubjects(): string[] {
   return []
 }
 
+export async function getTeacherAssignedSubjectsAsync(): Promise<string[]> {
+  return getTeacherAssignedSubjects()
+}
+
 /**
  * Check if teacher can manage a specific subject
  */
