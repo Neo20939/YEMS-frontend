@@ -23,11 +23,11 @@ import {
  * Configuration for the Notes API
  */
 const NOTES_API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+  baseUrl: '/api',
   timeout: 60000, // 60 seconds for file uploads
   endpoints: {
-    notes: 'api/notes',
-    upload: 'api/notes/upload',
+    notes: 'notes',
+    upload: 'notes/upload',
     download: (noteId: string) => `api/notes/${noteId}/download`,
     note: (noteId: string) => `api/notes/${noteId}`,
   },

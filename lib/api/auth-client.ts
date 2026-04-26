@@ -2,10 +2,11 @@
  * Authentication API Client
  *
  * Handles all authentication-related API calls.
- * 
+ *
  * YEMS uses session-based authentication with cookie: yems_session
  */
 
+import { ROLE_ID_MAP } from './roles'
 import { axios } from '@/lib/axios-shim'
 import {
   AUTH_CONFIG,
@@ -38,6 +39,20 @@ const apiClient = axios.create({
   },
 })
 
+// Request interceptor: add x-session-token header as fallback when cookies are blocked
+apiClient.interceptors.request.use((config) => {
+  // If cookies are not available (third-party cookie blocked), use x-session-token header
+  if (!config.withCredentials || config.headers?.['Cookie'] === undefined) {
+    const token = getAuthToken()
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        'x-session-token': token,
+      }
+    }
+  }
+  return config
+})
 apiClient.interceptors.response.use(
   response => response,
   error => {
@@ -87,35 +102,19 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
       expiresIn = Math.floor((expiresDate.getTime() - now.getTime()) / 1000)
     }
 
-    // Map role ID to role name
-    const roleIdMap: Record<number, string> = {
-      1: 'admin',
-      2: 'technician',
-      3: 'teacher',
-      4: 'class_teacher',
-      5: 'finance',
-      6: 'admin',
-      7: 'student',
-      8: 'student',
-      9: 'student',
-      10: 'student',
-      11: 'student',
-      12: 'student',
-    }
-    
-    const firstRole = user.roles?.[0]
-    let roleName: string
-    if (typeof firstRole === 'object' && firstRole?.name) {
-      roleName = firstRole.name
-    } else if (typeof firstRole === 'number') {
-      roleName = roleIdMap[firstRole] || 'student'
-    } else if (typeof firstRole === 'string') {
-      roleName = firstRole
-    } else {
-      roleName = 'student'
-    }
-
-    const loginResponse: LoginResponse = {
+  // Map role ID to role name using centralized role mapping
+  const firstRole = user.roles?.[0]
+  let roleName: string
+  if (typeof firstRole === 'object' && firstRole?.name) {
+    roleName = firstRole.name
+  } else if (typeof firstRole === 'number') {
+    roleName = ROLE_ID_MAP[firstRole] || 'student'
+  } else if (typeof firstRole === 'string') {
+    roleName = firstRole
+  } else {
+    roleName = 'student'
+  }
+  const loginResponse: LoginResponse = {
       user: {
         id: user.id,
         email: user.email,
@@ -135,8 +134,6 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     console.log("Processed user data:", JSON.stringify(loginResponse.user, null, 2))
     console.log("Login response user.role:", loginResponse.user.role)
 
-    // Save user data to storage (token is in cookie)
-    saveAuthToken(loginResponse.accessToken, loginResponse.refreshToken, loginResponse.user)
 
     return loginResponse
   } catch (error) {
@@ -145,7 +142,7 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
 
     // Re-throw the error - no mock fallback
     console.error("=== LOGIN FAILED COMPLETELY ===")
-    
+
     if (axios.isAxiosError(error)) {
       let errorMessage = 'Login failed. Please check your credentials.'
       const errCode = (error as any).code
@@ -164,6 +161,8 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
         errorMessage = 'Server error. Please try again later or contact support.'
       } else if (error.response?.status === 503) {
         errorMessage = 'Service unavailable. Please try again later.'
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
       }
 
       const apiError: ApiError = {
@@ -212,7 +211,7 @@ export async function getCurrentUser(): Promise<LoginResponse['user']> {
     )
 
     const userData = response.data.data
-    
+
     // Convert backend response to frontend format
     return {
       id: userData.userId,

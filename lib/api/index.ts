@@ -1,7 +1,3 @@
-/**
- * API Module Exports
- */
-
 export * from "./types"
 export { AUTH_CONFIG } from "./auth-config"
 export { login, logout } from "./auth-client"
@@ -9,3 +5,11 @@ export * from "./notes-client"
 export * from "./monitoring-client"
 export * from "./question-client"
 export * from "./class-teacher-client"
+export * from "./assignments-client"
+export * from "./finance-client"
+export * from "./announcements-client"
+export * from "./attendance-client"
+export * from "./schedules-client"
+export { getPresignedUpload, uploadToPresignedUrl, downloadFile, deleteFile, getFileInfo } from "./storage-client"
+export { getStudents, createStudent } from "./students-client"
+export * from "./audit-client"

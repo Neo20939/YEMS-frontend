@@ -6,16 +6,14 @@
 
 import { axios } from '@/lib/axios-shim'
 import { getAuthToken } from './auth-config'
-import { useUser } from '@/contexts/UserContext'
 import type { ExamCard } from '@/components/exam'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'
 
 /**
  * Create axios instance with auth interceptors
  */
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api',
   timeout: 60000, // 60 second timeout for exam operations
   headers: {
     'Content-Type': 'application/json',
@@ -83,15 +81,35 @@ export interface ExamQuestion {
   explanation?: string
 }
 
-export interface SavedAnswer {
-  id?: string
+export interface SubmissionAnswer {
+  id: string
+  submissionId: string
   questionId: string
-  examId: string
-  studentId: string
   answerText?: string // For theory questions
   selectedOptionIds?: string[] // For objective questions
-  isFlagged?: boolean
   isDraft: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ExamSubmission {
+  id: string
+  examId: string
+  studentId: string
+  status: 'not-started' | 'in-progress' | 'completed' | 'submitted'
+  answers: SubmissionAnswer[]
+  startTime?: string
+  submittedAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface SavedAnswer {
+  questionId: string
+  answerText?: string
+  selectedOptionIds?: string[]
+  isDraft: boolean
+  isFlagged?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -138,17 +156,8 @@ export interface ApiError {
  */
 export async function getExams(type?: 'objective' | 'theory'): Promise<Exam[]> {
   try {
-    const token = getAuthToken()
-    if (!token) {
-      throw new Error('Authentication required')
-    }
-
-    let url: string
-    if (type) {
-      url = `exams/type/${type}`
-    } else {
-      url = 'exams/'
-    }
+    // Backend handles role-based access via session cookie
+    const url = type ? `exams?type=${type}` : 'exams/'
 
     const { data } = await apiClient.get<Exam[]>(url)
     return data
@@ -222,7 +231,9 @@ export async function getTeacherExams(): Promise<Exam[]> {
  */
 export async function getExamById(examId: string): Promise<Exam | null> {
   try {
-    const { data } = await apiClient.get<Exam>(`exams/${examId}`)
+    // Backend handles role-based access via session cookie
+    const url = `exams/${examId}`
+    const { data } = await apiClient.get<Exam>(url)
     return data
   } catch (error) {
     console.error(`Failed to fetch exam ${examId}:`, error)
@@ -277,15 +288,39 @@ export async function startExam(
   studentId: string
 ): Promise<StartExamResponse> {
   try {
-    const { data } = await apiClient.post<StartExamResponse>('exams/start', {
+    // Backend uses session to get studentId from cookie - no need to pass it
+    const { data } = await apiClient.post<StartExamResponse>('exams/submissions', {
       examId,
-      studentId,
     })
     return data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw {
         message: error.response?.data?.message || 'Failed to start exam',
+        status: error.response?.status,
+      } as ApiError
+    }
+    throw error
+  }
+}
+
+/**
+ * Save an answer (supports draft mode)
+ */
+export async function saveSubmissionAnswers(
+  submissionId: string,
+  answers: Record<string, string | null>
+): Promise<ExamSubmission> {
+  try {
+    const { data } = await apiClient.patch<ExamSubmission>(
+      `exams/submissions/${submissionId}`,
+      { answers }
+    )
+    return data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw {
+        message: error.response?.data?.message || "Failed to save answers",
         status: error.response?.status,
       } as ApiError
     }
@@ -306,30 +341,20 @@ export async function saveAnswer(
   }
 ): Promise<SavedAnswer> {
   try {
-    const token = getAuthToken()
-    if (!token) {
-      throw new Error('Authentication required')
-    }
-
-    // Get student ID from stored user data
-    const userStr = localStorage.getItem('auth_user')
-    const user = userStr ? JSON.parse(userStr) : null
-    if (!user) {
-      throw new Error('User not authenticated')
-    }
-
     const { data } = await apiClient.post<SavedAnswer>(
-      `exams/${examId}/answers`,
+      `exams/submissions/${examId}`,
       {
-        questionId: answerData.questionId,
-        answerText: answerData.answerText,
-        selectedOptionIds: answerData.selectedOptionIds,
-        isDraft: answerData.isDraft ?? true,
+        answers: { [answerData.questionId]: answerData.answerText || '' },
       }
     )
     return data
   } catch (error) {
-    console.error('Failed to save answer:', error)
+    if (axios.isAxiosError(error)) {
+      throw {
+        message: error.response?.data?.message || 'Failed to save answer',
+        status: error.response?.status,
+      } as ApiError
+    }
     throw error
   }
 }
@@ -338,21 +363,17 @@ export async function saveAnswer(
  * Submit completed exam
  */
 export async function submitExam(
-  examId: string,
-  studentId: string,
-  answers: SavedAnswer[]
+  submissionId: string
 ): Promise<SubmitExamResponse> {
   try {
-    const { data } = await apiClient.post<SubmitExamResponse>('exams/submit', {
-      examId,
-      studentId,
-      answers,
-    })
+    const { data } = await apiClient.post<SubmitExamResponse>(
+      `exams/submissions/${submissionId}/submit`
+    )
     return data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw {
-        message: error.response?.data?.message || 'Failed to submit exam',
+        message: error.response?.data?.message || "Failed to submit exam",
         status: error.response?.status,
       } as ApiError
     }
@@ -364,12 +385,11 @@ export async function submitExam(
  * Get exam progress for a specific student
  */
 export async function getExamProgress(
-  examId: string,
-  studentId: string
+  examId: string
 ): Promise<ExamProgress | null> {
   try {
     const { data } = await apiClient.get<ExamProgress>(
-      `exams/${examId}/progress/${studentId}`
+      `exams/${examId}/progress`
     )
     return data
   } catch (error) {

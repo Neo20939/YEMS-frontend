@@ -136,43 +136,28 @@ export async function getUsers(): Promise<User[]> {
     console.log('[getUsers] Full response:', response)
     console.log('[getUsers] response.data:', response.data)
     console.log('[getUsers] response.data.data:', response.data.data)
-    
-    // Handle different response formats: { success: true, data: [...] } or just [...]
+
+    // Backend returns { success: boolean, data: User[], pagination?: {...} }
     const responseData = response.data
     let users: User[] = []
-    
-    // Extract users from response
-    let rawUsers: any[] = []
-    if (Array.isArray(responseData)) {
-      rawUsers = responseData
-    } else if (responseData.data) {
-      // Check if responseData.data is the actual array
-      if (Array.isArray(responseData.data)) {
-        rawUsers = responseData.data
-      } else if (responseData.data.data && Array.isArray(responseData.data.data)) {
-        // response.data.data.data = Array(20) - the actual users
-        rawUsers = responseData.data.data
-      } else if (responseData.data.users && Array.isArray(responseData.data.users)) {
-        rawUsers = responseData.data.users
-      } else if (responseData.data.results && Array.isArray(responseData.data.results)) {
-        rawUsers = responseData.data.results
-      }
-    } else if (responseData.results && Array.isArray(responseData.results)) {
-      rawUsers = responseData.results
+
+    if (responseData.success && responseData.data) {
+      // Standard wrapped response
+      users = responseData.data
+    } else if (Array.isArray(responseData)) {
+      // Direct array response (fallback)
+      users = responseData
     }
-    
-    console.log('[getUsers] Raw users extracted:', rawUsers.length)
-    
-    console.log('[getUsers] Raw users extracted:', rawUsers)
-    
+
+    console.log('[getUsers] Processed users:', users)
+
     // Map backend response to frontend User format
-    users = rawUsers.map((user: any) => ({
+    return users.map((user: any) => ({
       id: user.id || user._id,
       name: user.firstName && user.lastName 
         ? `${user.firstName} ${user.lastName}` 
         : user.name || user.email || 'Unknown',
       email: user.email || '',
-      // Handle roles - backend returns array of role IDs (numbers), convert to role names
       role: (() => {
         const roleId = Array.isArray(user.roles) ? user.roles[0] : user.roles
         const roleIdMap: Record<number, string> = {
@@ -191,8 +176,6 @@ export async function getUsers(): Promise<User[]> {
       createdAt: user.createdAt || user.created_at,
       updatedAt: user.updatedAt || user.updated_at,
     }))
-    
-    return users
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('Failed to fetch users:', error.response?.data)

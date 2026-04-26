@@ -2,7 +2,7 @@ import { axios } from '@/lib/axios-shim'
 import { getAuthToken } from './auth-config'
 import type { Class, StudentEnrollment } from '@/types/class'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://kennedi-ungnostic-unconvulsively.ngrok-free.dev'
+const API_BASE_URL = "/api"
 
 export interface ClassTeacherClass extends Class {
   studentCount: number

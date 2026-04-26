@@ -123,8 +123,8 @@ export const classService = {
     console.log('[getClasses] Full URL will be:', `/academic/classes?${params.toString()}`)
     const response = await apiClient.get(`academic/classes`, { params });
     console.log('[getClasses] Response:', response)
-    console.log('[getClasses] Number of classes returned:', response.data?.data?.length || 0)
-    console.log('[getClasses] Full first class object:', JSON.stringify(response.data?.data?.[0], null, 2))
+    console.log('[getClasses] Number of classes returned:', (response as any).data?.data?.length || 0)
+    console.log('[getClasses] Full first class object:', JSON.stringify((response as any).data?.data?.[0], null, 2))
     return handleResponse(response);
   },
 
@@ -290,9 +290,9 @@ export const classService = {
   async getClassTeacherAssignments(): Promise<Array<{ classId: string; teacherId: string }>> {
     try {
       const response = await apiClient.get(`academic/class-teacher-assignments`);
-      const result = await handleResponse(response);
+      const result = await handleResponse<{ data?: any[] }>(response);
       // Handle both wrapped and unwrapped responses
-      const items = result.data || result;
+      const items = result?.data || result;
       if (!Array.isArray(items)) {
         console.warn('[classService] getClassTeacherAssignments: data is not an array', result);
         return [];

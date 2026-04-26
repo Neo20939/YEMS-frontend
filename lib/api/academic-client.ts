@@ -6,6 +6,8 @@
 
 import { axios } from '@/lib/axios-shim'
 import { getAuthToken } from './auth-config'
+import type { Class } from '@/types/class'
+export type { Class }
 
 // ============================================================================
 // Types
