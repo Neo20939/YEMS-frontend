@@ -30,27 +30,21 @@ export function middleware(request: NextRequest) {
   // Check if the route is public
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   
-  // Get auth token from cookies or localStorage (via cookie)
-  const authToken = request.cookies.get('auth_token')?.value || 
-                    request.cookies.get('session')?.value
-  
-  // Get stored user data (if using cookie-based storage)
-  const storedUser = request.cookies.get('auth_user')?.value
-  
   // Get yems_session cookie for backend auth
   const yemsSession = request.cookies.get('yems_session')?.value
-  
+
   // If it's a protected route and user is not authenticated, redirect to login
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    if (!authToken && !storedUser) {
+    if (!yemsSession) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('from', pathname)
       return NextResponse.redirect(loginUrl)
     }
   }
-  
+
   // If user is authenticated and tries to access login, redirect to dashboard
-  if (pathname.startsWith('/login') && (authToken || storedUser)) {
+  if (pathname.startsWith('/login') && yemsSession) {
+    const storedUser = request.cookies.get('auth_user')?.value
     const user = storedUser ? JSON.parse(storedUser) : null
     const role = user?.role?.toLowerCase() || 'student'
     

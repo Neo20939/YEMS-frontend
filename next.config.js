@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Optimize package imports for faster compilation
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-slot'],
   },
-
+  
   images: {
     remotePatterns: [
       {
@@ -12,6 +11,15 @@ const nextConfig = {
         hostname: 'lh3.googleusercontent.com',
       },
     ],
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:80'}/api/:path*`,
+      },
+    ]
   },
 }
 
